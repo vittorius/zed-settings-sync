@@ -122,6 +122,45 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
     }
   }
 }
+```
 
-## TODO: finish the guide
+### Example configuration
 
+```jsonc
+{
+  "lsp": {
+    "settings_sync": {
+      "initialization_options": {
+        "github_token": "gho_nA8tK4GxW9eR1bY0uZqT7sL2pCjD5vFhE"
+        "gist_id": "e565898c6f664eb916c54de1e99ebe74"
+      }
+    }
+  }
+}
+```
+
+## How to use?
+
+Given, you've configured everything correctly, now you can:
+
+- edit global Zed settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd)
+- edit project settings (<kbd>zed: open project settings</kbd>)
+- edit the keymap (<kbd>zed: open keymap</kbd> or <kbd>zed: open keymap file</kbd)
+- edit tasks (<kbd>zed: open tasks</kbd>)
+- edit project tasks (<kbd>zed: open project tasks</kbd>)
+- edit debug tasks (<kbd>zed: open debug tasks</kbd>)
+- edit project debug tasks (<kbd>debugger: open project debug tasks</kbd>)
+
+After the file is saved, either manually, or triggered by the auto-save feature, it will be synchronized to the Gist you've specified.
+
+⚠️ Unfortunately, it does work the other way. In theory, we could make the LSP server download settings files from the cloud and put it in right place on your local machine.
+But that would be too hacky and fragile.
+
+ℹ️ Recently, Zed has added graphical interface for editing Settings and Keymap. When using such an editor, click `Edit in settings.json` or `Edit in keymap.json` respectively.
+You can go back to the visual editor and use it afterward, **just keep the corresponding JSON settings file open** for it to be caught by LSP and synchronized appropriately.
+Or, of course you can play hard and edit your config files manually, as it was before.
+
+## Troubleshooting
+
+- Open LSP logs (<kbd>dev: open language server logs<kbd>), find Settings Sync LSP server, and inspect its log
+- File an [issue](https://github.com/vittorius/zed-settings-sync/issues/new) on Github
