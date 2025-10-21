@@ -1,4 +1,4 @@
-**Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your global and per-project config files to a Github Gist using LSP
+**Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your global and per-project config files to a Github Gist using LSP.
 
 Using LSP is a workaround because of the limited capabilities of current Zed extensions API.
 
@@ -7,7 +7,7 @@ _Such an approach is heavily inspired by [Zed Discord Presence](https://github.c
 ## Requirements
 
 [rust](https://rust-lang.org) is required for installing this extension. \
-The easiest way to get [rust](https://rust-lang.org) is by using [rustup](https://rustup.rs)
+The easiest way to get [rust](https://rust-lang.org) is by using [rustup](https://rustup.rs).
 
 ## How to install?
 
@@ -26,7 +26,7 @@ When a corresponding [Zed extensions repo](https://github.com/zed-industries/ext
 
 ### Prepare a Github token
 
-#### Using Github CLI.
+#### Using Github CLI
 
 This is the easiest way.
 
@@ -131,7 +131,7 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
   "lsp": {
     "settings_sync": {
       "initialization_options": {
-        "github_token": "gho_nA8tK4GxW9eR1bY0uZqT7sL2pCjD5vFhE"
+        "github_token": "gho_nA8tK4GxW9eR1bY0uZqT7sL2pCjD5vFhE",
         "gist_id": "e565898c6f664eb916c54de1e99ebe74"
       }
     }
@@ -143,9 +143,9 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
 
 Given, you've configured everything correctly, now you can:
 
-- edit global Zed settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd)
+- edit global Zed settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd>)
 - edit project settings (<kbd>zed: open project settings</kbd>)
-- edit the keymap (<kbd>zed: open keymap</kbd> or <kbd>zed: open keymap file</kbd)
+- edit the keymap (<kbd>zed: open keymap</kbd> or <kbd>zed: open keymap file</kbd>)
 - edit tasks (<kbd>zed: open tasks</kbd>)
 - edit project tasks (<kbd>zed: open project tasks</kbd>)
 - edit debug tasks (<kbd>zed: open debug tasks</kbd>)
@@ -158,9 +158,9 @@ But that would be too hacky and fragile.
 
 ℹ️ Recently, Zed has added graphical interface for editing Settings and Keymap. When using such an editor, click `Edit in settings.json` or `Edit in keymap.json` respectively.
 You can go back to the visual editor and use it afterward, **just keep the corresponding JSON settings file open** for it to be caught by LSP and synchronized appropriately.
-Or, of course you can play hard and edit your config files manually, as it was before.
+Or, of course, you can play hard and edit your config files manually, as it was before.
 
 ## Troubleshooting
 
-- Open LSP logs (<kbd>dev: open language server logs<kbd>), find Settings Sync LSP server, and inspect its log
+- Open LSP logs (<kbd>dev: open language server logs</kbd>), find Settings Sync LSP server, and inspect its log
 - File an [issue](https://github.com/vittorius/zed-settings-sync/issues/new) on Github
