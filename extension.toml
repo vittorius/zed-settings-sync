@@ -1,0 +1,15 @@
+id = "settings-sync"
+name = "Settings Sync"
+version = "0.0.1"
+schema_version = 1
+authors = ["Viktor Zahorodnii <post.vittorius@gmail.com>"]
+description = "Never again be afraid of losing your precious Zed configuration"
+repository = "https://github.com/vittorius/zed-settings-sync"
+
+[language_servers.settings_sync]
+name = "Settings Sync LSP"
+languages = ["JSON", "JSONC"]
+
+[language_servers.settings_sync.language_ids]
+"JSON" = "json"
+"JSONC" = "jsonc"
