@@ -1,0 +1,20 @@
+name: Install rust
+description: Installs the latest version of rust, rustfmt & clippy
+
+inputs:
+  targets:
+    description: Comma-separated list of target triples to install for this toolchain
+    default: x86_64-unknown-linux-gnu
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: install rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        targets: ${{ inputs.targets }}
+
+    - name: cache dependencies
+      uses: Swatinem/rust-cache@v2

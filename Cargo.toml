@@ -3,8 +3,21 @@ name = "zed-settings-sync"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = ["lsp"]
+
 [dependencies]
 zed_extension_api = "0.7.0"
 
 [lib]
+path = "src/settings_sync.rs"
 crate-type = ["cdylib"]
+
+[workspace.lints]
+[workspace.lints.clippy]
+correctness = "deny"
+suspicious = "warn"
+complexity = "warn"
+perf = "warn"
+style = "deny"
+pedantic = "warn"
