@@ -164,3 +164,9 @@ Or, of course, you can play hard and edit your config files manually, as it was 
 
 - Open LSP logs (<kbd>dev: open language server logs</kbd>), find Settings Sync LSP server, and inspect its log
 - File an [issue](https://github.com/vittorius/zed-settings-sync/issues/new) on Github
+
+## Development
+
+- TODO: install rust and other components via rustup
+- TODO: install iprecommit (install uv, do uv venv, do ux pip install iprecommit)
+- TODO: other neccessary setup
