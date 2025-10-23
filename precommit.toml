@@ -1,0 +1,54 @@
+# This file configures Git hooks for the project.
+# Documentation: https://github.com/iafisher/iprecommit
+
+# Set 'fail_fast' to 'true' to abort the run after the first failing check.
+# You can also set 'fail_fast' on individual checks.
+autofix = true
+fail_fast = false
+
+[[pre_commit]]
+name = "NoForbiddenStrings"
+cmd = ["iprecommit-no-forbidden-strings", "--paths"]
+
+# [[pre_commit]]
+# name = "NewlineAtEndOfFile"
+# cmd = ["iprecommit-newline-at-eof"]
+# fix_cmd = ["iprecommit-newline-at-eof", "--fix"]
+# Uncomment the next two lines to have this check auto-fix and retry immediately on failure.
+# autofix = true
+# fail_fast = true
+
+# [[pre_commit]]
+# name = "PythonFormat"
+# cmd = ["black", "--check"]
+# filters = ["*.py"]
+# fix_cmd = ["black"]
+# autofix = true
+# fail_fast = true
+
+# [[pre_commit]]
+# name = "ProjectTests"
+# cmd = ["./run_tests"]
+# pass_files = false
+
+[[pre_commit]]
+name = "CargoFmt"
+cmd = ["cargo", "fmt", "--all", "--", "--check"]
+pass_files = false
+fix_cmd = ["cargo", "fmt", "--all"]
+
+[[pre_commit]]
+name = "CargoClippy"
+cmd =  ["cargo", "clippy", "--workspace", "--", "-D", "warnings"]
+pass_files = false
+fix_cmd =  ["cargo", "clippy", "--fix", "--allow-dirty"]
+
+# commit-msg checks
+[[commit_msg]]
+name = "CommitMessageFormat"
+cmd = ["iprecommit-commit-msg-format", "--max-line-length", "72"]
+
+# pre-push checks (run on commit messages)
+[[pre_push]]
+name = "NoForbiddenStrings"
+cmd = ["iprecommit-no-forbidden-strings", "--commits"]

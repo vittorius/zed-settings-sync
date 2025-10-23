@@ -1,7 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::{
@@ -12,7 +9,7 @@ use tower_lsp::{
         TextDocumentSyncSaveOptions, WorkspaceServerCapabilities,
     },
 };
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{info, instrument};
 
 use crate::service::AppState;
 
@@ -22,7 +19,7 @@ mod service;
 #[derive(Debug)]
 struct Backend {
     client: Client,
-    app_state: Arc<AppState>,
+    _app_state: Arc<AppState>,
     // TODO: add GistService
 }
 
@@ -32,7 +29,10 @@ impl Backend {
 
         info!("Backend initialized");
 
-        Self { client, app_state }
+        Self {
+            client,
+            _app_state: app_state,
+        }
     }
 
     // async fn on_change(&self, uri: &tower_lsp::lsp_types::Url) {
@@ -80,7 +80,7 @@ impl Backend {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, _params: InitializeParams) -> Result<InitializeResult> {
         info!("Initializing Zed Settings Sync LSP");
 
         // Set workspace
