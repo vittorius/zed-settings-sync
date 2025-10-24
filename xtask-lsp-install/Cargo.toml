@@ -1,0 +1,10 @@
+[package]
+name = "xtask-lsp-install"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+zed_paths = { git = "https://github.com/zed-industries/zed.git", package = "paths" }
+
+[lints]
+workspace = true

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["lsp"]
+members = ["lsp", "xtask-lsp-install"]
 
 [dependencies]
 zed_extension_api = "0.7.0"

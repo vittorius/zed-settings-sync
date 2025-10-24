@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "lsp version"
+        description: "LSP version"
         required: true
 
 jobs:
