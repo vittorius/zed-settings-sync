@@ -1,0 +1,12 @@
+[package]
+name = "zed-settings-sync-watcher"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+interprocess = "2.2.3"
+notify = "8.2.0"
+zed_paths = { git = "https://github.com/zed-industries/zed.git", package = "paths" }
+
+[lints]
+workspace = true

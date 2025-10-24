@@ -6,32 +6,31 @@ use std::{
     process::{Command, exit},
 };
 
-// TODO: extract to a shared local "paths" crate
 const EXTENSION_ID: &str = "settings-sync";
-const LSP_BINARY: &str = "zed-settings-sync-lsp";
+const WATCHER_BINARY: &str = "zed-settings-sync-watcher";
 
 fn main() -> Result<(), Box<dyn Error>> {
-    eprintln!("Building the LSP server...");
+    eprintln!("Building the watcher service...");
 
     let mut cmd = Command::new(env!("CARGO"));
-    cmd.args(["build", "-p", LSP_BINARY]);
+    cmd.args(["build", "-p", WATCHER_BINARY]);
     let status = cmd.status()?;
 
     if !status.success() {
-        eprintln!("failed to build the LSP server");
+        eprintln!("failed to build the watcher service");
         eprintln!("failed command: {cmd:?}");
         exit(status.code().unwrap_or(1));
     }
 
     eprintln!("Done");
 
-    let from = Path::new("target/debug").join(LSP_BINARY);
+    let from = Path::new("target/debug").join(WATCHER_BINARY);
     let to = zed_paths::extensions_dir()
         .join("work")
         .join(EXTENSION_ID)
-        .join(LSP_BINARY);
+        .join(WATCHER_BINARY);
     eprintln!(
-        "Copying the LSP binary from {} to the extension working directory {}...",
+        "Copying the watcher binary from {} to the extension working directory {}...",
         from.display(),
         to.display()
     );
