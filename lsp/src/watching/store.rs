@@ -53,7 +53,7 @@ impl Store {
             let mut watched_set = self.watched_set.lock().await;
 
             if watched_set.paths.contains(&file_path) {
-                bail!("Path already being watched");
+                bail!("Path is already being watched: {file_path}");
             }
 
             watched_set.watcher.watch(&file_path)?;
@@ -68,7 +68,7 @@ impl Store {
             let mut watched_set = self.watched_set.lock().await;
 
             if !watched_set.paths.contains(&file_path) {
-                bail!("Path not being watched");
+                bail!("Path is not being watched, failed to unwatch: {file_path}");
             }
 
             watched_set.watcher.unwatch(&file_path)?;
@@ -78,11 +78,6 @@ impl Store {
         Ok(())
     }
 
-    // pub async fn start_watcher(&mut self) -> anyhow::Result<()> {
-    //     self.watched_set.get_mut().watcher.start().await?;
-
-    //     Ok(())
-    // }
-
+    // no separate "start" method as watcher is started immediately when it's created
     // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 }
