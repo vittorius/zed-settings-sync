@@ -74,11 +74,11 @@ gh auth token | clip
     // ...
     "settings_sync": {
       "initialization_options": {
-        "github_token": "<your Github token>",
+        "github_token": "<your Github token>"
         // ...
-      },
-    },
-  },
+      }
+    }
+  }
 }
 ```
 
@@ -132,11 +132,11 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
     // ...
     "settings_sync": {
       "initialization_options": {
-        "gist_id": "<your Gist Id>",
+        "gist_id": "<your Gist Id>"
         // ...
-      },
-    },
-  },
+      }
+    }
+  }
 }
 ```
 
@@ -148,10 +148,10 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
     "settings_sync": {
       "initialization_options": {
         "github_token": "gho_nA8tK4GxW9eR1bY0uZqT7sL2pCjD5vFhE",
-        "gist_id": "e565898c6f664eb916c54de1e99ebe74",
-      },
-    },
-  },
+        "gist_id": "e565898c6f664eb916c54de1e99ebe74"
+      }
+    }
+  }
 }
 ```
 
