@@ -1,1 +1,5 @@
-words = ["worktree"]
+words = [
+    "unwatch",
+    "unwatching",
+    "worktree",
+]
