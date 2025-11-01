@@ -48,7 +48,7 @@ impl PathWatcher {
     pub fn watch<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         self.watcher
             .lock()
-            .expect("Path watcher mutex is poisoned")
+            .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top
             .watch(path.as_ref(), RecursiveMode::Recursive)?;
 
         Ok(())
@@ -57,7 +57,7 @@ impl PathWatcher {
     pub fn unwatch<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         self.watcher
             .lock()
-            .expect("Path watcher mutex is poisoned")
+            .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top
             .unwatch(path.as_ref())?;
 
         Ok(())
