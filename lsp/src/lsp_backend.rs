@@ -81,6 +81,12 @@ impl LanguageServer for Backend {
             Err(WatchedPathError::WrongFileUriFormat) => {
                 error!("Wrong file uri format: {}", params.text_document.uri);
             }
+            Err(WatchedPathError::MissingZedConfigDirParent) => {
+                error!(
+                    "Error finding the parent dir of local Zed config dir: {}",
+                    params.text_document.uri
+                );
+            }
         }
     }
 
@@ -107,6 +113,12 @@ impl LanguageServer for Backend {
             }
             Err(WatchedPathError::WrongFileUriFormat) => {
                 error!("Wrong file uri format: {}", params.text_document.uri);
+            }
+            Err(WatchedPathError::MissingZedConfigDirParent) => {
+                error!(
+                    "Error finding the parent dir of local Zed config dir: {}",
+                    params.text_document.uri
+                );
             }
         }
     }

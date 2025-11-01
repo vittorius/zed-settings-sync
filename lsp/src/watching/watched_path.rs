@@ -29,18 +29,20 @@ impl WatchedPath {
             }
         }
 
-        Ok(Self(Self::to_actual_watched_path(&file_path)?))
+        Ok(Self(Self::build_watched_path(&file_path)?))
     }
 
-    fn to_actual_watched_path(file_path: &Path) -> StdResult<PathBuf, WatchedPathError> {
+    fn build_watched_path(file_path: &Path) -> StdResult<PathBuf, WatchedPathError> {
         if file_path.starts_with(zed_paths::config_dir()) {
             Ok(file_path.to_owned())
-        } else if let local_config_dir = file_path
-            .parent()
-            .ok_or(WatchedPathError::NotZedConfigFile)?
-            && local_config_dir.as_os_str() == zed_paths::local_settings_folder_name()
+        } else if let Some(local_config_dir_path) = file_path.parent()
+            && let Some(local_config_dir_name) = local_config_dir_path.file_name()
+            && local_config_dir_name == zed_paths::local_settings_folder_name()
         {
-            Ok(local_config_dir.to_owned())
+            Ok(local_config_dir_path
+                .parent()
+                .ok_or(WatchedPathError::MissingZedConfigDirParent)?
+                .to_owned())
         } else {
             Err(WatchedPathError::NotZedConfigFile)
         }
@@ -61,5 +63,7 @@ impl AsRef<Path> for WatchedPath {
 
 pub enum WatchedPathError {
     NotZedConfigFile,
+    // error getting parent dir of local zed config (.zed) dir
+    MissingZedConfigDirParent,
     WrongFileUriFormat,
 }
