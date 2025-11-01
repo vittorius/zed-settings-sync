@@ -8,7 +8,6 @@ workspace = true
 
 [dependencies]
 anyhow = "1.0.100"
-debug-ignore = "1.0.5"
 interprocess = "2.2.3"
 notify = "8.2.0"
 octocrab = "0.47.0"
