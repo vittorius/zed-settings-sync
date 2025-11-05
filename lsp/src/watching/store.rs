@@ -48,7 +48,7 @@ impl Store {
         })
     }
 
-    pub async fn watch(&mut self, file_path: WatchedPath) -> anyhow::Result<()> {
+    pub async fn watch(&self, file_path: WatchedPath) -> anyhow::Result<()> {
         {
             let mut watched_set = self.watched_set.lock().await;
 
@@ -63,7 +63,7 @@ impl Store {
         Ok(())
     }
 
-    pub async fn unwatch(&mut self, file_path: WatchedPath) -> anyhow::Result<()> {
+    pub async fn unwatch(&self, file_path: WatchedPath) -> anyhow::Result<()> {
         {
             let mut watched_set = self.watched_set.lock().await;
 

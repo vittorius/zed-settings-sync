@@ -45,7 +45,7 @@ impl PathWatcher {
         })
     }
 
-    pub fn watch<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    pub fn watch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         self.watcher
             .lock()
             .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top
@@ -54,7 +54,7 @@ impl PathWatcher {
         Ok(())
     }
 
-    pub fn unwatch<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    pub fn unwatch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         self.watcher
             .lock()
             .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top

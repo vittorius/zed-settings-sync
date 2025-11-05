@@ -70,7 +70,7 @@ impl LanguageServer for Backend {
             Ok(path) => {
                 // TODO: handle error
                 info!("Watching path: {}", path);
-                let _ = self.app_state.watcher_store.lock().await.watch(path).await;
+                let _ = self.app_state.watcher_store.watch(path).await;
             }
             Err(WatchedPathError::NotZedConfigFile) => {
                 info!(
@@ -97,13 +97,7 @@ impl LanguageServer for Backend {
         match WatchedPath::new(&params.text_document.uri) {
             Ok(path) => {
                 info!("Unwatching path: {}", path);
-                let _ = self
-                    .app_state
-                    .watcher_store
-                    .lock()
-                    .await
-                    .unwatch(path)
-                    .await;
+                let _ = self.app_state.watcher_store.unwatch(path).await;
             }
             Err(WatchedPathError::NotZedConfigFile) => {
                 info!(
