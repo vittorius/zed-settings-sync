@@ -30,6 +30,9 @@ impl LanguageServer for Backend {
     async fn initialize(&self, _params: InitializeParams) -> Result<InitializeResult> {
         info!("Initializing Zed Settings Sync LSP...");
 
+        // start filesystem path watcher
+        self.app_state.watcher_store.start_watcher().await;
+
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
                 name: env!("CARGO_PKG_NAME").into(),

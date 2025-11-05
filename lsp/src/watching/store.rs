@@ -78,6 +78,11 @@ impl Store {
         Ok(())
     }
 
-    // no separate "start" method as watcher is started immediately when it's created
+    pub async fn start_watcher(&self) {
+        let mut watched_set = self.watched_set.lock().await;
+
+        watched_set.watcher.start();
+    }
+
     // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 }

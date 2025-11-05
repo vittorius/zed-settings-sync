@@ -1,9 +1,13 @@
+use debug_ignore::DebugIgnore;
 use notify::Watcher;
 use std::{path::Path, pin::Pin, sync::Mutex};
 
 use anyhow::Result;
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode};
-use tokio::{sync::mpsc::channel, task};
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Result as NotifyResult};
+use tokio::{
+    sync::mpsc::{Receiver, channel},
+    task,
+};
 use tracing::error;
 
 pub type EventHandler =
@@ -11,13 +15,14 @@ pub type EventHandler =
 
 #[derive(Debug)]
 pub struct PathWatcher {
-    // behind mutex to control watch/unwatch operations
-    watcher: Mutex<RecommendedWatcher>,
+    watcher: Mutex<RecommendedWatcher>, // behind mutex to control watch/unwatch operations
+    rx: Option<Receiver<NotifyResult<Event>>>,
+    event_handler: Option<DebugIgnore<EventHandler>>, // DebugIgnore because Fn traits can't implement Debug
 }
 
 impl PathWatcher {
     pub fn new(event_handler: EventHandler) -> Result<Self> {
-        let (tx, mut rx) = channel(1);
+        let (tx, rx) = channel(1);
         let handle = tokio::runtime::Handle::current();
 
         let watcher = RecommendedWatcher::new(
@@ -25,11 +30,30 @@ impl PathWatcher {
                 // called from a thread that is not controlled by tokio,
                 // so need to enter tokio async context explicitly
                 handle.block_on(async {
-                    tx.send(res).await.unwrap();
+                    if tx.send(res).await.is_err() {
+                        error!("Path watcher receiver dropped or closed");
+                    }
                 });
             },
             Config::default(),
         )?;
+
+        Ok(Self {
+            watcher: Mutex::new(watcher),
+            rx: Some(rx),
+            event_handler: Some(DebugIgnore(event_handler)),
+        })
+    }
+
+    pub fn start(&mut self) {
+        let mut rx = self
+            .rx
+            .take()
+            .expect("Path watcher receiver must be initialized");
+        let event_handler = self
+            .event_handler
+            .take()
+            .expect("Event handler must be initialized");
 
         task::spawn(async move {
             while let Some(res) = rx.recv().await {
@@ -39,10 +63,6 @@ impl PathWatcher {
                 }
             }
         });
-
-        Ok(Self {
-            watcher: Mutex::new(watcher),
-        })
     }
 
     pub fn watch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
