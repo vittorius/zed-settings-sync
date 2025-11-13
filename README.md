@@ -1,3 +1,7 @@
+<!-- markdownlint-disable-file MD033 --><!-- we are OK with inline HTML since we use <kbd> tags -->
+
+# Zed Settings Sync
+
 **Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your global and per-project config files to a Github Gist using LSP.
 
 Using LSP is a workaround because of the limited capabilities of current Zed extensions API.
@@ -16,7 +20,8 @@ The easiest way to get [rust](https://rust-lang.org) is by using [rustup](https:
 1. Clone this repository
 2. <kbd>CTRL</kbd> + <kbd>SHIFT</kbd> + <kbd>P</kbd> and select <kbd>zed: install dev extension</kbd>
 3. Choose the directory where you cloned this repository
-4. Enjoy :)
+4. After installing the extension, reload the workspace (<kbd>workspace: reload</kbd>) to start the LSP server
+5. Enjoy :)
 
 ### Normal installation
 
@@ -38,24 +43,30 @@ This is the easiest way.
 gh auth status
 ```
 
+<!-- markdownlint-disable MD029 -->
+
 4. Copy your token to the clipboard and paste it into your configuration file:
 
 macOS:
+
 ```shell
 gh auth token | pbcopy
 ```
 
 Linux:
+
 ```shell
 gh auth token | xclip -selection clipboard
 ```
 
 Windows:
+
 ```shell
 gh auth token | clip
 ```
 
 5. Paste it into your Settings Sync configuration:
+
 ```jsonc
 {
   // ...
@@ -85,11 +96,13 @@ So, to create a Gist for our purposes, again, we have 2 options.
 #### Github CLI
 
 macOS / Linux:
+
 ```shell
 echo "// Zed Settings\n\n{\n}\n" | gh gist create -f settings.json -d "Zed Settings"
 ```
 
 Windows:
+
 ```shell
 echo //^ Zed^ Settings| gh gist create -f settings.json -d "Zed Settings"
 ```
@@ -97,11 +110,13 @@ echo //^ Zed^ Settings| gh gist create -f settings.json -d "Zed Settings"
 #### curl
 
 macOS / Linux:
+
 ```shell
 curl -X POST -H "Authorization: token <your Github token>" -H "Content-Type: application/json" -d '{"description": "Zed Settings", "public": false, "files": {"settings.json": {"content": "// Zed Settings\n\n{\n}\n"}}}' https://api.github.com/gists
 ```
 
 Windows:
+
 ```shell
 curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type: application/json" -d "{\"description\":\"Zed Settings\",\"public\":false,\"files\":{\"settings.json\":{\"content\":\"// Zed Settings\n\n{\n}\n\"}}}" https://api.github.com/gists
 ```
@@ -109,6 +124,7 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
 #### Insert Gist ID into your Settings Sync configuration
 
 5. Paste it into your Settings Sync configuration:
+
 ```jsonc
 {
   // ...
