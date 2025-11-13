@@ -49,7 +49,10 @@ Test cases:
 - delete global config dir (~/.config/zed) **DON'T FORGET TO BACK IT UP**
 
 PoC #1: let's implement the logging of all events, remove logs garbage and find out all possible cases
-Outcome: there is no point in relying on workspace folders or root_uri because they don't correlate with actual files open. It will be easier to rely on concrete files open/close and deduce watched paths from them
+Outcome #1: there is no point in relying on workspace folders or root_uri because they don't correlate with actual files open. It will be easier to rely on concrete files open/close and deduce watched paths from them
+Outcome #2: it worked.
+Verdict: using this approach further on.
+
 
 ## Architecture v0.2
 
