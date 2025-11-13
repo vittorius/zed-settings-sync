@@ -17,8 +17,12 @@ pub fn init_logger() {
     };
 
     let filter = EnvFilter::from_default_env()
-        .add_directive(format!("zed_settings_sync={level}").parse().unwrap())
-        .add_directive("tower_lsp=off".parse().unwrap()); // silence tower-lsp
+        .add_directive(
+            format!("zed_settings_sync={level}")
+                .parse()
+                .expect("Failed to parse log level"),
+        )
+        .add_directive("tower_lsp=off".parse().expect("Failed to parse log level")); // silence tower-lsp
 
     let stderr_layer = fmt::layer()
         .with_writer(std::io::stderr)

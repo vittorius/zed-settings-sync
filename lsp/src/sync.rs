@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use notify::Event;
 use tracing::{info, instrument};
 
@@ -11,7 +11,8 @@ impl Client {
     pub fn new(personal_token: &str) -> Result<Self> {
         let client = octocrab::Octocrab::builder()
             .personal_token(personal_token)
-            .build()?;
+            .build()
+            .with_context(|| "Failed to build the Github client")?;
         Ok(Self { _client: client })
     }
 }

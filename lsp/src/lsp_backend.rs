@@ -12,6 +12,9 @@ use tracing::{debug, error, info, instrument};
 use crate::app_state::AppState;
 use crate::watching::{WatchedPath, WatchedPathError};
 
+const CARGO_PKG_NAME: &str = env!("CARGO_PKG_NAME");
+const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Debug)]
 pub struct Backend {
     app_state: AppState,
@@ -35,8 +38,8 @@ impl LanguageServer for Backend {
 
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
-                name: env!("CARGO_PKG_NAME").into(),
-                version: Some(env!("CARGO_PKG_VERSION").into()),
+                name: CARGO_PKG_NAME.into(),
+                version: Some(CARGO_PKG_VERSION.into()),
             }),
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Options(
