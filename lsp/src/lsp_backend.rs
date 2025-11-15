@@ -10,7 +10,7 @@ use tower_lsp::{
 use tracing::{debug, error, info, instrument};
 
 use crate::app_state::AppState;
-use crate::watching::{WatchedPath, WatchedPathError};
+use crate::watching::{ZedConfigFilePath, ZedConfigPathError};
 
 const CARGO_PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -72,26 +72,21 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         debug!("Document opened: {}", params.text_document.uri);
 
-        match WatchedPath::new(&params.text_document.uri) {
+        match ZedConfigFilePath::from_file_uri(&params.text_document.uri) {
             Ok(path) => {
+                let path_to_watch = path.to_watched_path_buf();
                 // TODO: handle error
-                info!("Watching path: {}", path);
-                let _ = self.app_state.watcher_store.watch(path).await;
+                info!("Watching path: {}", path_to_watch.display());
+                let _ = self.app_state.watcher_store.watch(path_to_watch).await;
             }
-            Err(WatchedPathError::NotZedConfigFile) => {
+            Err(ZedConfigPathError::NotZedConfigFile) => {
                 info!(
                     "Not a Zed config file, skipping: {}",
                     params.text_document.uri
                 );
             }
-            Err(WatchedPathError::WrongFileUriFormat) => {
+            Err(ZedConfigPathError::WrongFileUriFormat) => {
                 error!("Wrong file uri format: {}", params.text_document.uri);
-            }
-            Err(WatchedPathError::MissingZedConfigDirParent) => {
-                error!(
-                    "Error finding the parent dir of local Zed config dir: {}",
-                    params.text_document.uri
-                );
             }
         }
     }
@@ -100,25 +95,23 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         debug!("Document closed: {}", params.text_document.uri);
 
-        match WatchedPath::new(&params.text_document.uri) {
+        match ZedConfigFilePath::from_file_uri(&params.text_document.uri) {
             Ok(path) => {
                 info!("Unwatching path: {}", path);
-                let _ = self.app_state.watcher_store.unwatch(path).await;
+                let _ = self
+                    .app_state
+                    .watcher_store
+                    .unwatch(path.to_watched_path_buf())
+                    .await;
             }
-            Err(WatchedPathError::NotZedConfigFile) => {
+            Err(ZedConfigPathError::NotZedConfigFile) => {
                 info!(
                     "Not a Zed config file, skipping: {}",
                     params.text_document.uri
                 );
             }
-            Err(WatchedPathError::WrongFileUriFormat) => {
+            Err(ZedConfigPathError::WrongFileUriFormat) => {
                 error!("Wrong file uri format: {}", params.text_document.uri);
-            }
-            Err(WatchedPathError::MissingZedConfigDirParent) => {
-                error!(
-                    "Error finding the parent dir of local Zed config dir: {}",
-                    params.text_document.uri
-                );
             }
         }
     }

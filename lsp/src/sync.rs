@@ -1,6 +1,18 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Result};
-use notify::Event;
 use tracing::{info, instrument};
+
+pub struct FileData {
+    path: PathBuf,
+    body: String,
+}
+
+impl FileData {
+    pub fn new(path: PathBuf, body: String) -> Self {
+        Self { path, body }
+    }
+}
 
 #[derive(Debug)]
 pub struct Client {
@@ -18,11 +30,11 @@ impl Client {
 }
 
 impl Client {
-    #[instrument(skip(self, event))]
-    pub async fn notify(&self, event: Event) -> Result<()> {
+    #[instrument(skip_all)]
+    pub async fn sync_file(&self, data: FileData) -> Result<()> {
         // TODO: replace dummy async block with the REST client call
         async {
-            info!("event received: {event:?}");
+            info!("file saved: {}: {}", data.path.display(), data.body);
 
             Ok(())
         }
