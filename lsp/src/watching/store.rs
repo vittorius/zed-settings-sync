@@ -1,17 +1,23 @@
-use std::{collections::HashSet, pin::Pin, sync::Arc};
-
-use anyhow::Result;
-use anyhow::bail;
-use tokio::sync::Mutex;
-
 use crate::{
-    sync::Client,
-    watching::{EventHandler, PathWatcher, WatchedPath},
+    sync::{Client, FileData},
+    watching::{EventHandler, PathWatcher, ZedConfigFilePath},
 };
+use anyhow::Result;
+use anyhow::{Context, bail};
+use notify::Event;
+use std::{
+    collections::HashSet,
+    fs,
+    path::{Path, PathBuf},
+    pin::Pin,
+    sync::Arc,
+};
+use tokio::sync::Mutex;
+use tracing::{debug, error};
 
 #[derive(Debug)]
 struct WatchedSet {
-    paths: HashSet<WatchedPath>,
+    paths: HashSet<PathBuf>,
     watcher: PathWatcher,
 }
 
@@ -36,10 +42,24 @@ impl Store {
     pub fn new(client: Arc<Mutex<Client>>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
             let client_clone = Arc::clone(&client);
-            // TODO: construct client-friendly event that contains the actual file path, especially for local config dirs being monitored
             Box::pin(async move {
-                // TODO: handle error
-                let _ = client_clone.lock().await.notify(event).await;
+                match process_event(&event) {
+                    Ok(data) => {
+                        if data.is_none() {
+                            return;
+                        }
+
+                        if let Err(err) = client_clone
+                            .lock()
+                            .await
+                            .sync_file(data.expect("Must be already checked for presence"))
+                            .await
+                        {
+                            error!("Could not sync saved file due to error: {}", err);
+                        }
+                    }
+                    Err(err) => error!("Could not process file event: {err}"),
+                }
             }) as Pin<Box<dyn Future<Output = ()> + Send>>
         });
 
@@ -48,12 +68,12 @@ impl Store {
         })
     }
 
-    pub async fn watch(&self, file_path: WatchedPath) -> anyhow::Result<()> {
+    pub async fn watch(&self, file_path: PathBuf) -> anyhow::Result<()> {
         {
             let mut watched_set = self.watched_set.lock().await;
 
             if watched_set.paths.contains(&file_path) {
-                bail!("Path is already being watched: {file_path}");
+                bail!("Path is already being watched: {}", file_path.display());
             }
 
             watched_set.watcher.watch(&file_path)?;
@@ -63,12 +83,15 @@ impl Store {
         Ok(())
     }
 
-    pub async fn unwatch(&self, file_path: WatchedPath) -> anyhow::Result<()> {
+    pub async fn unwatch(&self, file_path: PathBuf) -> anyhow::Result<()> {
         {
             let mut watched_set = self.watched_set.lock().await;
 
             if !watched_set.paths.contains(&file_path) {
-                bail!("Path is not being watched, failed to unwatch: {file_path}");
+                bail!(
+                    "Path is not being watched, failed to unwatch: {}",
+                    file_path.display()
+                );
             }
 
             watched_set.watcher.unwatch(&file_path)?;
@@ -85,4 +108,32 @@ impl Store {
     }
 
     // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
+}
+
+fn process_event(event: &Event) -> Result<Option<FileData>> {
+    if !event.kind.is_modify() {
+        debug!("Got non-modify event, skipping: {event:?}");
+        return Ok(None);
+    }
+
+    let path = event
+        .paths
+        .first()
+        .cloned()
+        .expect("Event must provide path of the modified file");
+
+    // since we're watching the local settings parent dir (that is, the project dir)
+    // there will be lots of irrelevant notify events for other files
+    if !is_zed_config_file(&path) {
+        debug!("Not a Zed config file, skipping: {event:?}");
+        return Ok(None);
+    }
+
+    let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
+
+    Ok(Some(FileData::new(path, body)))
+}
+
+fn is_zed_config_file(path: &Path) -> bool {
+    ZedConfigFilePath::is_valid(path)
 }
