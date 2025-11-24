@@ -8,13 +8,6 @@ use tower_lsp::lsp_types::Url;
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ZedConfigFilePath {
     path: PathBuf,
-    kind: Kind,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-enum Kind {
-    Global,
-    Local,
 }
 
 impl ZedConfigFilePath {
@@ -26,24 +19,15 @@ impl ZedConfigFilePath {
         let path = file_uri
             .to_file_path()
             .map_err(|()| ZedConfigPathError::WrongFileUriFormat)?;
-        let kind = get_kind(&path)?;
 
-        Ok(Self { path, kind })
-    }
+        validate_file_path(&path)?;
+        validate_file_extension(&path)?;
 
-    pub fn is_valid(path: &Path) -> bool {
-        validate_file_extension(path).is_ok() && get_kind(path).is_ok()
+        Ok(Self { path })
     }
 
     pub fn to_watched_path_buf(&self) -> PathBuf {
-        match self.kind {
-            Kind::Global => self.path.clone(),
-            Kind::Local => self
-                .path
-                .parent()
-                .expect("Parent dir of local settings dir does not exist")
-                .to_owned(),
-        }
+        self.path.clone()
     }
 }
 
@@ -60,14 +44,9 @@ fn validate_file_extension(path: &Path) -> Result<(), ZedConfigPathError> {
     }
 }
 
-fn get_kind(path: &Path) -> Result<Kind, ZedConfigPathError> {
+fn validate_file_path(path: &Path) -> Result<(), ZedConfigPathError> {
     if path.starts_with(zed_paths::config_dir()) {
-        Ok(Kind::Global)
-    } else if let Some(local_config_dir_path) = path.parent()
-        && let Some(local_config_dir_name) = local_config_dir_path.file_name()
-        && local_config_dir_name == zed_paths::local_settings_folder_name()
-    {
-        Ok(Kind::Local)
+        Ok(())
     } else {
         Err(ZedConfigPathError::NotZedConfigFile)
     }
