@@ -1,10 +1,10 @@
 use crate::{
-    sync::{Client, FileData},
+    sync::{Client, Error as SyncError, FileData},
     watching::{EventHandler, PathWatcher},
 };
 use anyhow::Result;
-use anyhow::{Context, bail};
-use notify::Event;
+use anyhow::{Context, anyhow, bail};
+use notify::{Event, EventKind, event::ModifyKind};
 use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::{debug, error};
@@ -39,17 +39,12 @@ impl Store {
             Box::pin(async move {
                 match process_event(&event) {
                     Ok(data) => {
-                        if data.is_none() {
+                        let Some(data) = data else {
                             return;
-                        }
+                        };
 
-                        if let Err(err) = client_clone
-                            .lock()
-                            .await
-                            .sync_file(data.expect("Must be already checked for presence"))
-                            .await
-                        {
-                            error!("Could not sync saved file due to error: {}", err);
+                        if let Err(err) = client_clone.lock().await.sync_file(data).await {
+                            log_sync_error(err);
                         }
                     }
                     Err(err) => error!("Could not process file event: {err}"),
@@ -105,18 +100,35 @@ impl Store {
 }
 
 fn process_event(event: &Event) -> Result<Option<FileData>> {
-    if !event.kind.is_modify() {
-        debug!("Got non-modify event, skipping: {event:?}");
-        return Ok(None);
-    }
+    debug!("Processing file watcher event: {event:?}");
 
-    let path = event
-        .paths
-        .first()
-        .cloned()
-        .expect("Event must provide path of the modified file");
+    let EventKind::Modify(ModifyKind::Data(_)) = event.kind else {
+        debug!("Got not a file data modify event, skipping: {event:?}");
+        return Ok(None);
+    };
+
+    let path = event.paths.first().cloned().ok_or(anyhow!(
+        "event did not provide the path of the modified file"
+    ))?;
 
     let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
 
-    Ok(Some(FileData::new(path, body)))
+    Ok(Some(FileData::new(path, body)?))
+}
+
+fn log_sync_error(err: SyncError) {
+    match err {
+        SyncError::Github(source) => {
+            error!("Could not sync saved file due to Github error: {}", source);
+        }
+        SyncError::Internal(source) => {
+            error!(
+                "Could not sync saved file due to an internal error: {:?}",
+                source
+            );
+        }
+        SyncError::UnhandledInternal(message) => {
+            error!("{message}");
+        }
+    }
 }

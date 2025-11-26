@@ -15,9 +15,12 @@ crate-type = ["cdylib"]
 
 [workspace.lints]
 [workspace.lints.clippy]
+# yes, Cloudflare
+unwrap_used = "deny"
+expect_used = "deny"
+suspicious = { level = "warn", priority = -1 }
+complexity = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
 correctness = "deny"
-suspicious = "warn"
-complexity = "warn"
-perf = "warn"
 style = "deny"
-pedantic = "warn"

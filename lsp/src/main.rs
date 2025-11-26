@@ -1,11 +1,11 @@
 use tower_lsp::{LspService, Server};
 use tracing::info;
 
-use crate::lsp_backend::Backend;
+use crate::backend::Backend;
 
 mod app_state;
+mod backend;
 mod logger;
-mod lsp_backend;
 mod sync;
 mod watching;
 

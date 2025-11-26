@@ -4,7 +4,18 @@
 - Add edits should be applied synced to the external storage (Gist) in the same order they were applied to the file
 - No excessive synchronizations: as few requests to the external storage as possible
 
-## Architecture v0.3
+## Architecture v0.0.4
+
+- Watch for user settings files' changes only (not project ones)
+- On didOpen, if a file is a JSON file and in global config dir, add it to the watch list
+- On didClose, remove a file from the watch list if the it's there
+- ~~Update configuration handler (probably, via the corresponding LSP event), so that the LSP server catches up the gist id or auth token change in the app settings~~. It's enough to use `initialization_options` to pass the auth token and gist id to the LSP server - it will be restarted on their change.
+- CLI binary crate to download user settings files from the Gist. `zed-settings-sync load –-auth-token <GitHub auth token> –-gist <Gist ID>`. There will be a prompt to either overwrite, backup, or ignore on every file (settings.json, keymap.json, etc.) that will be attempted to upload.
+- A watcher Tokio "thread" should listen to the create/change file events and invoke the Github client to save their contents to the cloud.
+
+## Architecture v0.0.3
+
+❌ Obsolete: watching local settings files is impractical since they can be just checked into the VCS by a developer. Also, only didOpen/didClose events are available to us.
 
 - When an LSP server started place watchers on global settings file and global keymap file
 - On didOpen, if a file is in either global config dir or local config dir, add it to the watch list
@@ -53,8 +64,7 @@ Outcome #1: there is no point in relying on workspace folders or root_uri becaus
 Outcome #2: it worked.
 Verdict: using this approach further on.
 
-
-## Architecture v0.2
+## Architecture v0.0.2
 
 ❌ Obsolete: having 2 processes and coordinating them is too complex, let's place the file watcher Tokio "thread" within the LSP server. The "app state" will hold all paths to currently watched dirs or files.
 
@@ -69,7 +79,7 @@ Verdict: using this approach further on.
 - Upon its de-initialization, the LSP server:
   - stops the local watcher process for this workspace's Zed config directory
 
-## Architecture v0.1
+## Architecture v0.0.1
 
 ❌ Obsolete: Zed doesn't emit didSave LSP message when working with global settings files because they are opened in a separate invisible worktree. It means that pure LSP approach won't work.
 
