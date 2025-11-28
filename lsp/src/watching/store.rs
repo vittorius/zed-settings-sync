@@ -1,17 +1,11 @@
 use crate::{
     sync::{Client, FileData},
-    watching::{EventHandler, PathWatcher, ZedConfigFilePath},
+    watching::{EventHandler, PathWatcher},
 };
 use anyhow::Result;
 use anyhow::{Context, bail};
 use notify::Event;
-use std::{
-    collections::HashSet,
-    fs,
-    path::{Path, PathBuf},
-    pin::Pin,
-    sync::Arc,
-};
+use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::{debug, error};
 
@@ -122,18 +116,7 @@ fn process_event(event: &Event) -> Result<Option<FileData>> {
         .cloned()
         .expect("Event must provide path of the modified file");
 
-    // since we're watching the local settings parent dir (that is, the project dir)
-    // there will be lots of irrelevant notify events for other files
-    if !is_zed_config_file(&path) {
-        debug!("Not a Zed config file, skipping: {event:?}");
-        return Ok(None);
-    }
-
     let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
 
     Ok(Some(FileData::new(path, body)))
-}
-
-fn is_zed_config_file(path: &Path) -> bool {
-    ZedConfigFilePath::is_valid(path)
 }

@@ -2,7 +2,9 @@
 
 # Zed Settings Sync
 
-**Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your global and per-project config files to a Github Gist using LSP.
+**Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your user-level config files to a Github Gist using LSP.
+
+ℹ️ This extension doesn't sync local settings files (from the project dir) because it's more pragmatic to just check them in the project's VCS repository if needed.
 
 Using LSP is a workaround because of the limited capabilities of current Zed extensions API.
 
@@ -159,18 +161,17 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
 
 Given, you've configured everything correctly, now you can:
 
-- edit global Zed settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd>)
-- edit project settings (<kbd>zed: open project settings</kbd>)
+- edit the settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd>)
 - edit the keymap (<kbd>zed: open keymap</kbd> or <kbd>zed: open keymap file</kbd>)
 - edit tasks (<kbd>zed: open tasks</kbd>)
-- edit project tasks (<kbd>zed: open project tasks</kbd>)
 - edit debug tasks (<kbd>zed: open debug tasks</kbd>)
-- edit project debug tasks (<kbd>debugger: open project debug tasks</kbd>)
 
 After the file is saved, either manually, or triggered by the auto-save feature, it will be synchronized to the Gist you've specified.
 
 ⚠️ Unfortunately, it does work the other way. In theory, we could make the LSP server download settings files from the cloud and put it in right place on your local machine.
 But that would be too hacky and fragile.
+
+- TODO: add a section about the binary CLI crate to download settings from the Gist
 
 ℹ️ Recently, Zed has added graphical interface for editing Settings and Keymap. When using such an editor, click `Edit in settings.json` or `Edit in keymap.json` respectively.
 You can go back to the visual editor and use it afterward, **just keep the corresponding JSON settings file open** for it to be caught by LSP and synchronized appropriately.

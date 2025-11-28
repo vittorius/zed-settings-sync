@@ -80,7 +80,7 @@ impl LanguageServer for Backend {
                 let _ = self.app_state.watcher_store.watch(path_to_watch).await;
             }
             Err(ZedConfigPathError::NotZedConfigFile) => {
-                info!(
+                debug!(
                     "Not a Zed config file, skipping: {}",
                     params.text_document.uri
                 );
@@ -105,7 +105,7 @@ impl LanguageServer for Backend {
                     .await;
             }
             Err(ZedConfigPathError::NotZedConfigFile) => {
-                info!(
+                debug!(
                     "Not a Zed config file, skipping: {}",
                     params.text_document.uri
                 );
