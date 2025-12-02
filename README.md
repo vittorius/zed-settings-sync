@@ -159,23 +159,41 @@ curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type:
 
 ## How to use?
 
+### Syncing to a Github Gist
+
 Given, you've configured everything correctly, now you can:
 
-- edit the settings (<kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd>)
-- edit the keymap (<kbd>zed: open keymap</kbd> or <kbd>zed: open keymap file</kbd>)
+- edit the settings file ( or <kbd>zed: open settings file</kbd>)
+- edit the keymap file ( or <kbd>zed: open keymap file</kbd>)
 - edit tasks (<kbd>zed: open tasks</kbd>)
 - edit debug tasks (<kbd>zed: open debug tasks</kbd>)
 
 After the file is saved, either manually, or triggered by the auto-save feature, it will be synchronized to the Gist you've specified.
 
-⚠️ Unfortunately, it does work the other way. In theory, we could make the LSP server download settings files from the cloud and put it in right place on your local machine.
-But that would be too hacky and fragile.
+ℹ️ At some point, Zed has added graphical interface for editing Settings and Keymap.
+It pops up by default when you run <kbd>zed: open settings</kbd> or <kbd>zed: open keymap</kbd> workbench action.
+When using such an editor, click `Edit in settings.json` or `Edit in keymap.json` respectively.
+You can go back to the visual editor and use it afterward, **just keep the corresponding JSON settings file open**
+for it to be caught by LSP and synchronized appropriately.
+Or, of course, you can edit your config files manually, as it was before.
+
+Another approach could be swapping the keymap entries for <kbd>zed: open settings</kbd> or <kbd>zed: open settings file</kbd> (and for keymap file in a similar fashion):
+
+```json
+{
+  "bindings": {
+    "cmd-,": "zed::OpenSettingsFile",
+    "alt-cmd-,": "zed::OpenSettings"
+  }
+}
+```
+
+### Loading settings back from a Github Gist
+
+⚠️ Unfortunately, the extension in its current implementation does not provide an action or a command to load settings from a Github Gist.
+This is because of the limited functionality of Zed extensions in general. But, a CLI tool (TBD) is provided to download settings from the Gist.
 
 - TODO: add a section about the binary CLI crate to download settings from the Gist
-
-ℹ️ Recently, Zed has added graphical interface for editing Settings and Keymap. When using such an editor, click `Edit in settings.json` or `Edit in keymap.json` respectively.
-You can go back to the visual editor and use it afterward, **just keep the corresponding JSON settings file open** for it to be caught by LSP and synchronized appropriately.
-Or, of course, you can play hard and edit your config files manually, as it was before.
 
 ## Troubleshooting
 
