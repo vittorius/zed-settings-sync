@@ -1,7 +1,10 @@
+use std::path::PathBuf;
+
+use anyhow::Result;
 use serde::Deserialize;
 use serde_json::from_value;
 use tokio::sync::Mutex;
-use tower_lsp::jsonrpc::Result;
+use tower_lsp::jsonrpc::Result as LspResult;
 use tower_lsp::lsp_types::{DidCloseTextDocumentParams, DidOpenTextDocumentParams};
 use tower_lsp::{
     Client, LanguageServer,
@@ -20,9 +23,11 @@ const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug)]
 pub struct Backend {
-    // mutex is needed for interior mutability, option - for delayed initialization;
+    // Mutex is needed for interior mutability, Option - for delayed initialization;
     // both of them - because of how the LanguageServer trait is defined by tower-lsp:
-    // its methods don't mutate self
+    // its methods don't mutate self.
+    // We have to use the async Mutex here because the `std::sync::Mutex` is not Send
+    // thus cannot be used in async functions.
     app_state: Mutex<Option<AppState>>,
 }
 
@@ -31,6 +36,42 @@ impl Backend {
         Self {
             app_state: Mutex::new(None),
         }
+    }
+
+    async fn watch_path(&self, path: PathBuf) -> Result<()> {
+        let info_msg = format!("Watching path: {}", path.display());
+
+        #[allow(clippy::expect_used)]
+        self.app_state
+            .lock()
+            .await
+            .as_ref()
+            .expect("App state must be already initialized")
+            .watcher_store
+            .watch(path)
+            .await?;
+
+        info!("{}", info_msg);
+
+        Ok(())
+    }
+
+    async fn unwatch_path(&self, path: PathBuf) -> Result<()> {
+        let info_msg = format!("Unwatching path: {}", path.display());
+
+        #[allow(clippy::expect_used)]
+        self.app_state
+            .lock()
+            .await
+            .as_ref()
+            .expect("App state must be already initialized")
+            .watcher_store
+            .unwatch(path)
+            .await?;
+
+        info!("{}", info_msg);
+
+        Ok(())
     }
 }
 
@@ -42,7 +83,7 @@ struct Config {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> LspResult<InitializeResult> {
         info!("Initializing Zed Settings Sync LSP...");
 
         let options = params.initialization_options.ok_or_else(|| {
@@ -102,7 +143,7 @@ impl LanguageServer for Backend {
     }
 
     #[instrument(skip(self))]
-    async fn shutdown(&self) -> Result<()> {
+    async fn shutdown(&self) -> LspResult<()> {
         info!("Shutting down Zed Settings Sync LSP");
 
         Ok(())
@@ -115,20 +156,10 @@ impl LanguageServer for Backend {
         match ZedConfigFilePath::from_file_uri(&params.text_document.uri) {
             Ok(path) => {
                 let path_to_watch = path.to_watched_path_buf();
-                info!("Watching path: {}", path_to_watch.display());
                 // TODO: expose sync_client in app state and sync file explicitly after opening (quick'n'dirty way to fight losing last changes on LSP restart on settings update)
-                // TODO: handle error
-                // TODO: extract this scary call chain into a separate function
-                #[allow(clippy::expect_used)]
-                let _ = self
-                    .app_state
-                    .lock()
-                    .await
-                    .as_ref()
-                    .expect("app_state should be Some")
-                    .watcher_store
-                    .watch(path_to_watch)
-                    .await;
+                if let Err(err) = self.watch_path(path_to_watch).await {
+                    error!("Failed to start watching path: {}", err);
+                }
             }
             Err(ZedConfigPathError::NotZedConfigFile) => {
                 debug!(
@@ -148,19 +179,10 @@ impl LanguageServer for Backend {
 
         match ZedConfigFilePath::from_file_uri(&params.text_document.uri) {
             Ok(path) => {
-                info!("Unwatching path: {}", path);
-                // TODO: handle error
-                // TODO: extract this scary call chain into a separate function
-                #[allow(clippy::expect_used)]
-                let _ = self
-                    .app_state
-                    .lock()
-                    .await
-                    .as_ref()
-                    .expect("app_state should be Some")
-                    .watcher_store
-                    .unwatch(path.to_watched_path_buf())
-                    .await;
+                let path_to_watch = path.to_watched_path_buf();
+                if let Err(err) = self.unwatch_path(path_to_watch).await {
+                    error!("Failed to stop watching path: {}", err);
+                }
             }
             Err(ZedConfigPathError::NotZedConfigFile) => {
                 debug!(
