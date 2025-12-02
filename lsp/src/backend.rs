@@ -95,9 +95,6 @@ impl LanguageServer for Backend {
             tower_lsp::jsonrpc::Error::internal_error()
         })?;
 
-        // FIXME: fetch the Github auth token from the gh CLI;
-        // otherwise it gets expired by the Github token scan service
-        // because it gets saved into the gist in the settings.json file, obviously...
         let app_state = AppState::new(config.gist_id, config.github_token).map_err(|err| {
             error!("Failed to build the app state: {}", err);
             tower_lsp::jsonrpc::Error::internal_error()

@@ -12,6 +12,7 @@
 - ~~Update configuration handler (probably, via the corresponding LSP event), so that the LSP server catches up the gist id or auth token change in the app settings~~. It's enough to use `initialization_options` to pass the auth token and gist id to the LSP server - it will be restarted on their change.
 - CLI binary crate to download user settings files from the Gist. `zed-settings-sync load –-auth-token <GitHub auth token> –-gist <Gist ID>`. There will be a prompt to either overwrite, backup, or ignore on every file (settings.json, keymap.json, etc.) that will be attempted to upload.
 - A watcher Tokio "thread" should listen to the create/change file events and invoke the Github client to save their contents to the cloud.
+- A Github token used to authenticate with the Github API is masked on the fly during sync if syncing the `settings.json` file.
 
 ## Architecture v0.0.3
 

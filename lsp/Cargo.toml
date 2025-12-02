@@ -9,8 +9,7 @@ workspace = true
 [dependencies]
 anyhow = "1.0.100"
 debug-ignore = "1.0.5"
-interprocess = "2.2.3"
-json5 = "1.0.0"
+jsonc-parser = { version = "0.28.0", features = ["cst"] }
 notify = "8.2.0"
 octocrab = "0.47.0"
 serde = { version = "1.0.228", features = ["derive"] }

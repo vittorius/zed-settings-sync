@@ -1,8 +1,7 @@
 use crate::sync::file_data::FileData;
 use anyhow::{Context, Result};
-use json5::from_str;
+use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
-use serde_json::Value;
 use tracing::{info, instrument};
 
 #[derive(Debug)]
@@ -23,6 +22,8 @@ impl Client {
 
     #[instrument(skip_all)]
     pub async fn sync_file(&self, data: FileData) -> Result<(), Error> {
+        info!("Syncing file: {}", data.path.display());
+
         let body = Self::process_file_body(&data.body, &data.path == zed_paths::settings_file())?;
 
         self.client
@@ -39,28 +40,51 @@ impl Client {
     }
 
     fn process_file_body(body: &str, is_settings_file: bool) -> Result<String, Error> {
-        let mut json: serde_json::Value = from_str(body).map_err(Error::InvalidJson)?;
+        let mut root =
+            CstRootNode::parse(body, &ParseOptions::default()).map_err(Error::InvalidJson)?;
 
         if is_settings_file {
-            Self::mask_auth_token(&mut json)?;
+            Self::mask_auth_token(&mut root)?;
         }
 
-        Ok(json.to_string())
+        Ok(root.to_string())
     }
 
-    fn mask_auth_token(settings_json: &mut Value) -> Result<(), Error> {
-        let github_token_pointer = settings_json
-            .pointer_mut("/lsp/settings_sync/initialization_options/github_token")
-            .ok_or(Error::InvalidConfig("Missing github_token".to_string()))?;
-
-        *github_token_pointer = "[masked]".into();
+    fn mask_auth_token(root: &mut CstRootNode) -> Result<(), Error> {
+        let root_obj = root.object_value_or_set();
+        root_obj
+            .get("lsp")
+            .ok_or(Error::InvalidConfig(r#"Missing "lsp" key"#.to_string()))?
+            .object_value()
+            .ok_or(Error::InvalidConfig(
+                r#"Missing "lsp" configuration object"#.to_string(),
+            ))?
+            .get("settings_sync")
+            .ok_or(Error::InvalidConfig(
+                r#"Missing "settings_sync" key"#.to_string(),
+            ))?
+            .object_value()
+            .ok_or(Error::InvalidConfig(
+                r#"Missing "settings_sync" configuration object"#.to_string(),
+            ))?
+            .get("initialization_options")
+            .ok_or(Error::InvalidConfig(
+                r#"Missing "initialization_options" key"#.to_string(),
+            ))?
+            .object_value()
+            .ok_or(Error::InvalidConfig(
+                r#"Missing "initialization_options" configuration object"#.to_string(),
+            ))?
+            .get("github_token")
+            .ok_or(Error::InvalidConfig("Missing github_token".to_string()))?
+            .set_value("[masked]".into());
 
         Ok(())
     }
 }
 
 pub enum Error {
-    InvalidJson(json5::Error),
+    InvalidJson(ParseError),
     InvalidConfig(String),
     Github(GitHubError),
     Internal(Box<dyn std::error::Error + Send + Sync>),
