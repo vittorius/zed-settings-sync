@@ -1,6 +1,8 @@
 use crate::sync::file_data::FileData;
 use anyhow::{Context, Result};
+use json5::from_str;
 use octocrab::{Error as OctocrabError, GitHubError};
+use serde_json::Value;
 use tracing::{info, instrument};
 
 #[derive(Debug)]
@@ -21,11 +23,13 @@ impl Client {
 
     #[instrument(skip_all)]
     pub async fn sync_file(&self, data: FileData) -> Result<(), Error> {
+        let body = Self::process_file_body(&data.body, &data.path == zed_paths::settings_file())?;
+
         self.client
             .gists()
             .update(&self.gist_id)
             .file(&data.filename)
-            .with_content(&data.body)
+            .with_content(&body)
             .send()
             .await?;
 
@@ -33,9 +37,31 @@ impl Client {
 
         Ok(())
     }
+
+    fn process_file_body(body: &str, is_settings_file: bool) -> Result<String, Error> {
+        let mut json: serde_json::Value = from_str(body).map_err(Error::InvalidJson)?;
+
+        if is_settings_file {
+            Self::mask_auth_token(&mut json)?;
+        }
+
+        Ok(json.to_string())
+    }
+
+    fn mask_auth_token(settings_json: &mut Value) -> Result<(), Error> {
+        let github_token_pointer = settings_json
+            .pointer_mut("/lsp/settings_sync/initialization_options/github_token")
+            .ok_or(Error::InvalidConfig("Missing github_token".to_string()))?;
+
+        *github_token_pointer = "[masked]".into();
+
+        Ok(())
+    }
 }
 
 pub enum Error {
+    InvalidJson(json5::Error),
+    InvalidConfig(String),
     Github(GitHubError),
     Internal(Box<dyn std::error::Error + Send + Sync>),
     UnhandledInternal(String),

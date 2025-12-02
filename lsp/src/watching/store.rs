@@ -118,6 +118,12 @@ fn process_event(event: &Event) -> Result<Option<FileData>> {
 
 fn log_sync_error(err: SyncError) {
     match err {
+        SyncError::InvalidJson(source) => {
+            error!("Invalid JSON in config file: {}", source);
+        }
+        SyncError::InvalidConfig(message) => {
+            error!("Invalid config file structure: {}", message);
+        }
         SyncError::Github(source) => {
             error!("Could not sync saved file due to Github error: {}", source);
         }
