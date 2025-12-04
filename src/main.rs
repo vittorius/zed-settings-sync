@@ -73,6 +73,7 @@ pub struct Cli {
 pub enum Command {
     /// Load all Zed user settings files from a gist
     Load {
+        /// Force overwriting local settings files even if they exist
         #[arg(short, long, default_value_t = false)]
         force: bool,
     },
