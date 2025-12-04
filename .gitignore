@@ -23,9 +23,6 @@ target
 # Python stuff for iprecommit
 .venv
 
-# Zed
-.zed
-
 # Zed extensions
 extension.wasm
 
