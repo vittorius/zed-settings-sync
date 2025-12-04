@@ -10,6 +10,7 @@
 - [x] Forbid the usage of unwrap and expect for Option, Result
 - [ ] Test all error-returning code paths and ensure that all error conditions are either properly logged and/or reported back to Zed in form or a JSON-RPC error response
 - [ ] Manually save a settings file on its open (before adding to the watch list) to handle the case when the LSP server is restarted after the initialization_options are changes in settings.json file.
+- [ ] **Add unit and integration tests**
 - [ ] After implementing naive changes persistence (sync files as FS events come), seek the ways to improve it
 – [ ] (experimental) Rewrite the LSP server to use structured async concurrency, thread-per-code async runtime, and get rid of Arc's around every data structure
 - [ ] Use serde_json from zed_extension_api, not directly
