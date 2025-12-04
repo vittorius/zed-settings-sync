@@ -7,7 +7,15 @@ edition = "2024"
 members = ["lsp", "xtask-lsp-install"]
 
 [dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.53", features = ["derive"] }
+jsonc-parser = { version = "0.28.0", features = ["cst", "serde"] }
+octocrab = "0.48.1"
+rpassword = "7.4.0"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
 zed_extension_api = "0.7.0"
+zed_paths = { git = "https://github.com/zed-industries/zed.git", package = "paths" }
 
 [lib]
 path = "src/settings_sync.rs"
@@ -15,7 +23,7 @@ crate-type = ["cdylib"]
 
 [workspace.lints]
 [workspace.lints.clippy]
-# yes, Cloudflare
+# yes, Cloudflare, I'm looking at you
 unwrap_used = "deny"
 expect_used = "deny"
 suspicious = { level = "warn", priority = -1 }
