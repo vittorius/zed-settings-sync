@@ -13,8 +13,9 @@
 - [ ] After implementing naive changes persistence (sync files as FS events come), seek the ways to improve it
 – [ ] (experimental) Rewrite the LSP server to use structured async concurrency, thread-per-code async runtime, and get rid of Arc's around every data structure
 - [ ] Use serde_json from zed_extension_api, not directly
+- [ ] Add secrecy crate and use it for all usages of the Github token
 
-### CLI
+### CLI tool
 
 - [ ] Handle errors more beautifully, introduce the dedicated Error type if needed
 - [ ] Log output through tracing subscriber and/or add coloring of various levels of output messages
