@@ -1,4 +1,7 @@
-use std::{fs, io::stdin};
+use std::{
+    fs,
+    io::{Write, stdin, stdout},
+};
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand};
@@ -69,7 +72,10 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Load all Zed user settings files from a gist
-    Load,
+    Load {
+        #[arg(short, long, default_value_t = false)]
+        force: bool,
+    },
 }
 
 #[tokio::main]
@@ -77,7 +83,7 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
 
     match args.command {
-        Command::Load => {
+        Command::Load { force } => {
             let config = if zed_paths::settings_file().exists() {
                 println!("Loading settings from file");
                 Config::from_file()?
@@ -86,7 +92,7 @@ async fn main() -> Result<()> {
                 Config::from_user_input()?
             };
 
-            load(&config).await?;
+            load(&config, force).await?;
         }
     };
 
@@ -95,7 +101,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn load(config: &Config) -> Result<()> {
+async fn load(config: &Config, force: bool) -> Result<()> {
     // TODO: use the logic to load the gist contents from the shared Client type/module
     let octocrab = octocrab::Octocrab::builder()
         .personal_token(config.github_token.clone())
@@ -109,10 +115,28 @@ async fn load(config: &Config) -> Result<()> {
             continue;
         }
 
+        let file_path = zed_paths::config_dir().join(&file_name);
+
+        if file_path.exists() && !force {
+            print!("🟡 {file_name} exists, overwrite (y/n)? ");
+            stdout().flush()?;
+
+            let mut answer = String::new();
+            stdin().read_line(&mut answer)?;
+
+            if answer.trim().to_lowercase().starts_with('y') {
+                println!("🔴 Overwriting {file_name}...");
+            } else {
+                println!("Skipping {file_name}");
+                continue;
+            }
+        }
+
         let mut content = file
             .content
             .expect("File content is already checked for presence");
 
+        // SAFETY: all expect's are handled by Zed paths
         if file_name
             == zed_paths::settings_file()
                 .file_name()
@@ -143,11 +167,9 @@ async fn load(config: &Config) -> Result<()> {
             content = root.to_string();
         }
 
-        // FIXME: prompt on overwrite if exists; use -f option to force
+        fs::write(file_path, content)?;
 
-        fs::write(zed_paths::config_dir().join(&file_name), content)?;
-
-        println!("🟢 Successfully written {file_name} file");
+        println!("Written {file_name}");
     }
 
     Ok(())
