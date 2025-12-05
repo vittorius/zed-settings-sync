@@ -112,7 +112,7 @@ async fn load(config: &Config, force: bool) -> Result<()> {
     let gist = octocrab.gists().get(&config.gist_id).await?;
 
     for (file_name, file) in gist.files {
-        if !file_name.ends_with(".json") && file.content.is_none() {
+        if !file_name.ends_with(".json") || file.content.is_none() {
             continue;
         }
 
