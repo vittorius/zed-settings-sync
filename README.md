@@ -204,4 +204,4 @@ This is because of the limited functionality of Zed extensions in general. But, 
 
 - TODO: install rust and other components via rustup
 - TODO: install iprecommit (install uv, do uv venv, do ux pip install iprecommit)
-- TODO: other neccessary setup
+- TODO: other necessary setup

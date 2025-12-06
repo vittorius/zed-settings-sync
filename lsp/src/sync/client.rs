@@ -4,6 +4,7 @@ use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
 use tracing::{info, instrument};
 
+// TODO: extract Client to a shared module to be used by both LSP and CLI tool crates
 #[derive(Debug)]
 pub struct Client {
     client: octocrab::Octocrab,
@@ -40,17 +41,17 @@ impl Client {
     }
 
     fn process_file_body(body: &str, is_settings_file: bool) -> Result<String, Error> {
-        let mut root =
+        let root =
             CstRootNode::parse(body, &ParseOptions::default()).map_err(Error::InvalidJson)?;
 
         if is_settings_file {
-            Self::mask_auth_token(&mut root)?;
+            Self::mask_auth_token(&root)?;
         }
 
         Ok(root.to_string())
     }
 
-    fn mask_auth_token(root: &mut CstRootNode) -> Result<(), Error> {
+    fn mask_auth_token(root: &CstRootNode) -> Result<(), Error> {
         let root_obj = root.object_value_or_set();
         root_obj
             .get("lsp")

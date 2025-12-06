@@ -75,6 +75,7 @@ impl Backend {
     }
 }
 
+// TODO: extract into a shared crate for use by both LSP and CLI tool
 #[derive(Debug, Deserialize)]
 struct Config {
     gist_id: String,
