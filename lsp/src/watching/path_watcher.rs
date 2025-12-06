@@ -2,7 +2,7 @@ use debug_ignore::DebugIgnore;
 use notify::Watcher;
 use std::{path::Path, pin::Pin, sync::Mutex};
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Result as NotifyResult};
 use tokio::{
     sync::mpsc::{Receiver, channel},
@@ -46,10 +46,13 @@ impl PathWatcher {
     }
 
     pub fn start(&mut self) {
+        #[allow(clippy::expect_used)]
         let mut rx = self
             .rx
             .take()
             .expect("Path watcher receiver must be initialized");
+
+        #[allow(clippy::expect_used)]
         let event_handler = self
             .event_handler
             .take()
@@ -68,7 +71,7 @@ impl PathWatcher {
     pub fn watch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         self.watcher
             .lock()
-            .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top
+            .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
             .watch(path.as_ref(), RecursiveMode::Recursive)?;
 
         Ok(())
@@ -77,7 +80,7 @@ impl PathWatcher {
     pub fn unwatch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         self.watcher
             .lock()
-            .expect("Path watcher mutex is poisoned") // TODO: propagate error to the top
+            .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
             .unwatch(path.as_ref())?;
 
         Ok(())

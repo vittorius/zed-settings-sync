@@ -16,13 +16,18 @@ pub fn init_logger() {
         _ => unreachable!(),
     };
 
+    #[allow(clippy::expect_used)]
     let filter = EnvFilter::from_default_env()
         .add_directive(
             format!("zed_settings_sync={level}")
                 .parse()
-                .expect("Failed to parse log level"),
+                .expect("Failed to parse log filter directive"),
         )
-        .add_directive("tower_lsp=off".parse().expect("Failed to parse log level")); // silence tower-lsp
+        .add_directive(
+            "tower_lsp=off"
+                .parse()
+                .expect("Failed to parse log filter directive"),
+        ); // silence tower-lsp
 
     let stderr_layer = fmt::layer()
         .with_writer(std::io::stderr)
