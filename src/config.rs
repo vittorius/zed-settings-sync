@@ -1,11 +1,17 @@
-use std::{fs, io::stdin};
+use std::{
+    fs,
+    io::{BufRead, Write},
+};
 
+#[cfg(test)]
+use crate::test_support::read_password;
 #[cfg(test)]
 use crate::test_support::zed_paths;
 use anyhow::{Result, anyhow, bail};
 use jsonc_parser::{ParseOptions, parse_to_serde_value};
 #[cfg(not(test))]
 use paths as zed_paths;
+#[cfg(not(test))]
 use rpassword::read_password;
 use serde::Deserialize;
 use zed_extension_api::serde_json::from_value;
@@ -37,24 +43,26 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_user_input() -> Result<Self> {
-        println!("Enter your Github token:");
+    pub fn from_user_input(input: &mut impl BufRead, output: &mut impl Write) -> Result<Self> {
+        writeln!(output, "Enter your Github token:")?;
         let mut github_token: String;
 
         github_token = read_password()?;
         while github_token.is_empty() {
-            println!("Github token cannot be empty");
+            writeln!(output, "Github token cannot be empty")?;
             github_token = read_password()?;
         }
 
-        println!("Enter your Gist ID:");
+        writeln!(output, "Enter your Gist ID:")?;
         let mut gist_id = String::default();
-        stdin().read_line(&mut gist_id)?;
-        while gist_id.is_empty() {
-            println!("Gist ID cannot be empty");
-            stdin().read_line(&mut gist_id)?;
-        }
+        input.read_line(&mut gist_id)?;
         gist_id = gist_id.trim_end().to_owned();
+
+        while gist_id.is_empty() {
+            writeln!(output, "Gist ID cannot be empty")?;
+            input.read_line(&mut gist_id)?;
+            gist_id = gist_id.trim_end().to_owned();
+        }
 
         Ok(Config {
             github_token,
@@ -65,9 +73,11 @@ impl Config {
 
 #[cfg(test)]
 pub mod tests {
+    use std::io::{Cursor, Seek};
+
     use assert_fs::prelude::*;
 
-    use crate::test_support::zed_config_file;
+    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_config_file};
 
     use super::*;
 
@@ -205,6 +215,37 @@ pub mod tests {
             config.unwrap_err().to_string(),
             "missing field `github_token`"
         );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_user_input_successfully_reads_config() -> Result<()> {
+        let input_lines = "\nabcdef1234567890\n"; // empty line followed by fake gist id
+        let mut input = Cursor::new(input_lines);
+        let mut output: Cursor<Vec<u8>> = Cursor::new(vec![]);
+
+        let config = Config::from_user_input(&mut input, &mut output)?;
+        output.rewind()?;
+
+        let mut output_lines_iter = output.lines();
+
+        assert_eq!(
+            output_lines_iter.next().unwrap()?,
+            "Enter your Github token:"
+        );
+        assert_eq!(
+            output_lines_iter.next().unwrap()?,
+            "Github token cannot be empty"
+        ); // first input line is empty
+        assert_eq!(output_lines_iter.next().unwrap()?, "Enter your Gist ID:");
+        assert_eq!(
+            output_lines_iter.next().unwrap()?,
+            "Gist ID cannot be empty"
+        ); // first input line is empty
+
+        assert_eq!(config.github_token, FAKE_GITHUB_TOKEN);
+        assert_eq!(config.gist_id, "abcdef1234567890");
 
         Ok(())
     }
