@@ -3,6 +3,20 @@
 // Example:
 [
   {
+    "label": "cargo nextest $ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
+    "command": "cargo nextest run $ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
+    "tags": ["rust-test"]
+  },
+  {
+    "label": "cargo nextest $ZED_STEM (package: $ZED_CUSTOM_RUST_PACKAGE)",
+    "command": "cargo nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_STEM::$ZED_SYMBOL",
+    "tags": ["rust-mod-test"]
+  },
+  {
+    "label": "cargo nextest run",
+    "command": "cargo nextest run"
+  },
+  {
     "label": "cargo clippy fix",
     "command": "cargo clippy --fix --allow-dirty"
   }
