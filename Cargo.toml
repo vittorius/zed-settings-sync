@@ -15,10 +15,13 @@ rpassword = "7.4.0"
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
 zed_extension_api = "0.7.0"
-zed_paths = { git = "https://github.com/zed-industries/zed.git", package = "paths" }
+paths = { git = "https://github.com/zed-industries/zed.git" }
 
 [lib]
 crate-type = ["cdylib"]
+
+[dev-dependencies]
+assert_fs = "1.1.3"
 
 [workspace.lints]
 [workspace.lints.clippy]
