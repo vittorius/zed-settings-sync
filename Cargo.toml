@@ -18,7 +18,6 @@ zed_extension_api = "0.7.0"
 zed_paths = { git = "https://github.com/zed-industries/zed.git", package = "paths" }
 
 [lib]
-path = "src/settings_sync.rs"
 crate-type = ["cdylib"]
 
 [workspace.lints]
