@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{Write, stdin, stdout},
+    io::{self, Write, stdin, stdout},
 };
 
 #[cfg(test)]
@@ -45,7 +45,9 @@ async fn main() -> Result<()> {
                 Config::from_file()?
             } else {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
-                Config::from_user_input()?
+                let mut stdin = io::stdin().lock();
+                let mut stdout = io::stdout().lock();
+                Config::from_user_input(&mut stdin, &mut stdout)?
             };
 
             load(&config, force).await?;
