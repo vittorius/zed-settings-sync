@@ -46,7 +46,7 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_user_input(input: &mut impl BufRead, output: &mut impl Write) -> Result<Self> {
+    pub fn from_interactive_io(input: &mut impl BufRead, output: &mut impl Write) -> Result<Self> {
         writeln!(output, "Enter your Github token:")?;
         let mut github_token: String;
 
@@ -228,7 +228,7 @@ pub mod tests {
         let mut input = Cursor::new(input_lines);
         let mut output: Cursor<Vec<u8>> = Cursor::new(vec![]);
 
-        let config = Config::from_user_input(&mut input, &mut output)?;
+        let config = Config::from_interactive_io(&mut input, &mut output)?;
         output.rewind()?;
 
         let mut output_lines_iter = output.lines();

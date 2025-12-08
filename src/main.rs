@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
                 let mut stdin = io::stdin().lock();
                 let mut stdout = io::stdout().lock();
-                Config::from_user_input(&mut stdin, &mut stdout)?
+                Config::from_interactive_io(&mut stdin, &mut stdout)?
             };
 
             load(&config, force).await?;
@@ -136,3 +136,6 @@ async fn load(config: &Config, force: bool) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {}
