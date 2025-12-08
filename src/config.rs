@@ -95,4 +95,117 @@ pub mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_settings_file_is_missing() {
+        let config = Config::from_file();
+
+        assert_eq!(config.unwrap_err().to_string(), "Settings file not found");
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_settings_file_is_empty() -> Result<()> {
+        zed_config_file().touch()?;
+
+        let config = Config::from_file();
+
+        assert_eq!(config.unwrap_err().to_string(), "Settings file is empty");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_config_is_missing_lsp_key() -> Result<()> {
+        zed_config_file().write_str("{}")?;
+
+        let config = Config::from_file();
+
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            "Missing lsp.settings_sync.initialization_options key in settings tree"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_key() -> Result<()> {
+        zed_config_file().write_str(r#"{"lsp": {}}"#)?;
+
+        let config = Config::from_file();
+
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            "Missing lsp.settings_sync.initialization_options key in settings tree"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_initialization_options_key()
+    -> Result<()> {
+        zed_config_file().write_str(
+            r#"
+            {
+              "lsp": {
+                "settings_sync": {}
+              }
+            }"#,
+        )?;
+
+        let config = Config::from_file();
+
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            "Missing lsp.settings_sync.initialization_options key in settings tree"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_config_is_missing_gist_id_key() -> Result<()> {
+        zed_config_file().write_str(
+            r#"
+            {
+              "lsp": {
+                "settings_sync": {
+                  "initialization_options": {}
+                }
+              }
+            }"#,
+        )?;
+
+        let config = Config::from_file();
+
+        assert_eq!(config.unwrap_err().to_string(), "missing field `gist_id`");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_from_file_fails_when_config_is_missing_github_token_key() -> Result<()> {
+        zed_config_file().write_str(
+            r#"
+            {
+              "lsp": {
+                "settings_sync": {
+                  "initialization_options": {
+                    "gist_id": "1234567890abcdef"
+                  }
+                }
+              }
+            }"#,
+        )?;
+
+        let config = Config::from_file();
+
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            "missing field `github_token`"
+        );
+
+        Ok(())
+    }
 }
