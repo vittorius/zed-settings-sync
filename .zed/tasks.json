@@ -17,8 +17,8 @@
     "tags": ["rust-mod-test"]
   },
   {
-    "label": "cargo nextest run",
-    "command": "cargo nextest run"
+    "label": "cargo nextest run --workspace",
+    "command": "cargo nextest run --workspace"
   },
   {
     "label": "cargo clippy fix",
