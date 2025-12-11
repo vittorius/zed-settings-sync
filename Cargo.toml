@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["lsp", "xtask-lsp-install"]
+members = ["common", "lsp", "xtask-lsp-install"]
 
 [dependencies]
 anyhow = "1.0.100"
