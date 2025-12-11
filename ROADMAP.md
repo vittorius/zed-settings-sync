@@ -16,6 +16,7 @@
       – [ ] (experimental) Rewrite the LSP server to use structured async concurrency, thread-per-code async runtime, and get rid of Arc's around every data structure
 - [ ] Use serde_json from zed_extension_api, not directly
 - [ ] Add secrecy crate and use it for all usages of the Github token
+- [ ] To support multiple sync providers, implement a SyncClient trait and use it for all sync operations. Move it to the "common" crate.
 
 ### CLI tool
 
