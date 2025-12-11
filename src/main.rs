@@ -19,7 +19,10 @@ impl Config {
     fn from_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
         if !zed_paths::settings_file().try_exists()? {
-            bail!("Settings file not found");
+            bail!(
+                "Settings file not found at: {}",
+                zed_paths::settings_file().display()
+            );
         }
         let content = fs::read_to_string(zed_paths::settings_file())?;
         let zed_settings = parse_to_serde_value(&content, &ParseOptions::default())?
@@ -137,14 +140,17 @@ async fn load(config: &Config, force: bool) -> Result<()> {
             .content
             .expect("File content is already checked for presence");
 
-        // SAFETY: all expect's are handled by Zed paths
-        if file_name
-            == zed_paths::settings_file()
-                .file_name()
-                .expect("Settings file path must end in valid file name")
-                .to_str()
-                .expect("Settings file name must be in ASCII")
-        {
+        let settings_file_name = zed_paths::settings_file()
+            .file_name()
+            .with_context(|| {
+                format!(
+                    "Settings file path ends with invalid file name: {}",
+                    zed_paths::settings_file().display()
+                )
+            })?
+            .to_string_lossy();
+
+        if file_name == settings_file_name {
             let root = CstRootNode::parse(&content, &ParseOptions::default())?;
             let root_obj = root.object_value_or_set();
             root_obj
