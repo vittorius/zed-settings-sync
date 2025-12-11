@@ -1,3 +1,5 @@
+// TODO: consider extracting this module into a separate local crate
+
 #![allow(clippy::pedantic)]
 
 use assert_fs::{TempDir, fixture::ChildPath, prelude::PathChild};

@@ -117,7 +117,13 @@ mod tests {
     async fn test_from_file_fails_when_settings_file_is_missing() {
         let config = Config::from_file();
 
-        assert_eq!(config.unwrap_err().to_string(), "Settings file not found");
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            format!(
+                "Settings file not found at: {}",
+                zed_paths::settings_file().display()
+            )
+        );
     }
 
     #[tokio::test]
