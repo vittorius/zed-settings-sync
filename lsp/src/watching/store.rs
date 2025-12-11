@@ -1,5 +1,5 @@
 use crate::{
-    sync::{Client, Error as SyncError, FileData},
+    sync::{Client, Error as SyncError, LocalFileData},
     watching::{EventHandler, PathWatcher},
 };
 use anyhow::Result;
@@ -99,7 +99,7 @@ impl Store {
     // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 }
 
-fn process_event(event: &Event) -> Result<Option<FileData>> {
+fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
     debug!("Processing file watcher event: {event:?}");
 
     let EventKind::Modify(ModifyKind::Data(_)) = event.kind else {
@@ -113,7 +113,7 @@ fn process_event(event: &Event) -> Result<Option<FileData>> {
 
     let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
 
-    Ok(Some(FileData::new(path, body)?))
+    Ok(Some(LocalFileData::new(path, body)?))
 }
 
 fn log_sync_error(err: SyncError) {

@@ -1,4 +1,4 @@
-use crate::sync::file_data::FileData;
+use crate::sync::local_file_data::LocalFileData;
 use anyhow::{Context, Result};
 use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
@@ -22,7 +22,7 @@ impl Client {
     }
 
     #[instrument(skip_all)]
-    pub async fn sync_file(&self, data: FileData) -> Result<(), Error> {
+    pub async fn sync_file(&self, data: LocalFileData) -> Result<(), Error> {
         info!("Syncing file: {}", data.path.display());
 
         let body = Self::process_file_body(&data.body, &data.path == zed_paths::settings_file())?;
