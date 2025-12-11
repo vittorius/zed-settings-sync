@@ -1,69 +1,21 @@
 use std::{
     fs,
-    io::{Write, stdin, stdout},
+    io::{self, Write, stdin, stdout},
 };
 
-use anyhow::{Context, Result, anyhow, bail};
+#[cfg(test)]
+use crate::test_support::zed_paths;
+use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
-use jsonc_parser::{ParseOptions, cst::CstRootNode, parse_to_serde_value};
-use rpassword::read_password;
-use serde::Deserialize;
-use zed_extension_api::serde_json::from_value;
+use jsonc_parser::{ParseOptions, cst::CstRootNode};
+#[cfg(not(test))]
+use paths as zed_paths;
 
-#[derive(Debug, Deserialize)]
-struct Config {
-    gist_id: String,
-    github_token: String,
-}
-impl Config {
-    fn from_file() -> Result<Self> {
-        // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
-        if !zed_paths::settings_file().try_exists()? {
-            bail!(
-                "Settings file not found at: {}",
-                zed_paths::settings_file().display()
-            );
-        }
-        let content = fs::read_to_string(zed_paths::settings_file())?;
-        let zed_settings = parse_to_serde_value(&content, &ParseOptions::default())?
-            .ok_or(anyhow!("Settings file is empty"))?;
-        let config = from_value(
-            zed_settings
-                .pointer("/lsp/settings_sync/initialization_options") // TODO: make this pointer key shared among crates of this package
-                .ok_or(anyhow!(
-                    "Missing lsp.settings_sync.initialization_options key in settings tree"
-                ))?
-                .clone(),
-        )?;
+use crate::config::Config;
 
-        Ok(config)
-    }
-
-    fn from_user_input() -> Result<Self> {
-        println!("Enter your Github token:");
-        let mut github_token: String;
-
-        github_token = read_password()?;
-        while github_token.is_empty() {
-            println!("Github token cannot be empty");
-            github_token = read_password()?;
-        }
-
-        println!("Enter your Gist ID:");
-        let mut gist_id = String::default();
-        stdin().read_line(&mut gist_id)?;
-        while gist_id.is_empty() {
-            println!("Gist ID cannot be empty");
-            stdin().read_line(&mut gist_id)?;
-        }
-        gist_id = gist_id.trim_end().to_owned();
-
-        Ok(Config {
-            github_token,
-            gist_id,
-        })
-    }
-}
+mod config;
+#[cfg(test)]
+mod test_support;
 
 #[derive(Debug, Parser)]
 #[command(about = "Zed Settings Sync extension CLI tool", long_about = None)]
@@ -93,7 +45,9 @@ async fn main() -> Result<()> {
                 Config::from_file()?
             } else {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
-                Config::from_user_input()?
+                let mut stdin = io::stdin().lock();
+                let mut stdout = io::stdout().lock();
+                Config::from_interactive_io(&mut stdin, &mut stdout)?
             };
 
             load(&config, force).await?;
@@ -140,7 +94,8 @@ async fn load(config: &Config, force: bool) -> Result<()> {
             .content
             .expect("File content is already checked for presence");
 
-        let settings_file_name = zed_paths::settings_file()
+        let settings_file_name = zed_paths::settings_file();
+        let settings_file_name = settings_file_name
             .file_name()
             .with_context(|| {
                 format!(
@@ -181,3 +136,6 @@ async fn load(config: &Config, force: bool) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {}
