@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
         Command::Load { force } => {
             let config = if zed_paths::settings_file().exists() {
                 println!("Loading settings from file");
-                Config::from_file()?
+                Config::from_settings_file()?
             } else {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
                 let mut stdin = io::stdin().lock();
