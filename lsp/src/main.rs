@@ -6,7 +6,6 @@ use crate::backend::Backend;
 mod app_state;
 mod backend;
 mod logger;
-mod sync;
 mod watching;
 
 #[tokio::main]

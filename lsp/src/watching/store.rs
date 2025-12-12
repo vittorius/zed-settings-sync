@@ -1,9 +1,7 @@
-use crate::{
-    sync::{Client, Error as SyncError, LocalFileData},
-    watching::{EventHandler, PathWatcher},
-};
+use crate::watching::{EventHandler, PathWatcher};
 use anyhow::Result;
 use anyhow::{Context, anyhow, bail};
+use common::sync::{Client, Error as SyncError, LocalFileData};
 use notify::{Event, EventKind, event::ModifyKind};
 use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
