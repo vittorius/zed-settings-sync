@@ -1,13 +1,13 @@
 use anyhow::{Result, anyhow};
 use std::path::PathBuf;
 
-pub struct FileData {
+pub struct LocalFileData {
     pub path: PathBuf,
     pub filename: String,
     pub body: String,
 }
 
-impl FileData {
+impl LocalFileData {
     pub fn new(path: PathBuf, body: String) -> Result<Self> {
         Ok(Self {
             filename: path

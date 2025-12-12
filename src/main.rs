@@ -3,19 +3,15 @@ use std::{
     io::{self, Write, stdin, stdout},
 };
 
-#[cfg(test)]
-use crate::test_support::zed_paths;
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
+#[cfg(test)]
+use common::test_support::zed_paths;
 use jsonc_parser::{ParseOptions, cst::CstRootNode};
 #[cfg(not(test))]
 use paths as zed_paths;
 
-use crate::config::Config;
-
-mod config;
-#[cfg(test)]
-mod test_support;
+use common::config::Config;
 
 #[derive(Debug, Parser)]
 #[command(about = "Zed Settings Sync extension CLI tool", long_about = None)]
@@ -136,6 +132,3 @@ async fn load(config: &Config, force: bool) -> Result<()> {
 
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {}

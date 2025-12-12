@@ -502,6 +502,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "anyhow",
+ "assert_fs",
+ "jsonc-parser",
+ "octocrab",
+ "paths",
+ "rpassword",
+ "serde",
+ "tokio",
+ "zed_extension_api",
+]
+
+[[package]]
 name = "compression-codecs"
 version = "0.4.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1560,21 +1575,6 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "9.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
-dependencies = [
- "base64",
- "js-sys",
- "pem",
- "ring",
- "serde",
- "serde_json",
- "simple_asn1",
-]
-
-[[package]]
-name = "jsonwebtoken"
 version = "10.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c76e1c7d7df3e34443b3621b459b066a7b79644f059fc8b2db7070c825fd417e"
@@ -1873,46 +1873,6 @@ dependencies = [
 
 [[package]]
 name = "octocrab"
-version = "0.47.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0860f9250b6db66c5a4b46e00b381f063c58ad06a90f95f9ef701dd8679bb2c6"
-dependencies = [
- "arc-swap",
- "async-trait",
- "base64",
- "bytes",
- "cfg-if",
- "chrono",
- "either",
- "futures",
- "futures-util",
- "http",
- "http-body",
- "http-body-util",
- "hyper",
- "hyper-rustls",
- "hyper-timeout",
- "hyper-util",
- "jsonwebtoken 9.3.1",
- "once_cell",
- "percent-encoding",
- "pin-project",
- "secrecy",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_urlencoded",
- "snafu",
- "tokio",
- "tower 0.5.2",
- "tower-http",
- "tracing",
- "url",
- "web-time",
-]
-
-[[package]]
-name = "octocrab"
 version = "0.48.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c5930b376c98c438a4f4259a760cda2c198efea3b82de8f8a2aff0c00a8b7c1c"
@@ -1935,7 +1895,7 @@ dependencies = [
  "hyper-rustls",
  "hyper-timeout",
  "hyper-util",
- "jsonwebtoken 10.2.0",
+ "jsonwebtoken",
  "once_cell",
  "percent-encoding",
  "pin-project",
@@ -4073,13 +4033,11 @@ name = "zed-settings-sync"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "assert_fs",
  "clap",
+ "common",
  "jsonc-parser",
- "octocrab 0.48.1",
+ "octocrab",
  "paths",
- "rpassword",
- "serde",
  "tokio",
  "zed_extension_api",
 ]
@@ -4089,17 +4047,18 @@ name = "zed-settings-sync-lsp"
 version = "0.0.1-alpha.1"
 dependencies = [
  "anyhow",
+ "common",
  "debug-ignore",
  "jsonc-parser",
  "notify",
- "octocrab 0.47.0",
+ "octocrab",
  "paths",
  "serde",
- "serde_json",
  "tokio",
  "tower-lsp",
  "tracing",
  "tracing-subscriber",
+ "zed_extension_api",
 ]
 
 [[package]]

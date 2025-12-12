@@ -22,6 +22,8 @@ pub struct Config {
     pub github_token: String,
 }
 
+#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_panics_doc)]
 impl Config {
     pub fn from_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
@@ -68,14 +70,16 @@ impl Config {
         }
 
         Ok(Config {
-            github_token,
             gist_id,
+            github_token,
         })
     }
 }
 
+#[allow(clippy::expect_used)]
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use std::io::{Cursor, Seek};
 
     use assert_fs::prelude::*;
@@ -113,7 +117,13 @@ pub mod tests {
     async fn test_from_file_fails_when_settings_file_is_missing() {
         let config = Config::from_file();
 
-        assert_eq!(config.unwrap_err().to_string(), "Settings file not found");
+        assert_eq!(
+            config.unwrap_err().to_string(),
+            format!(
+                "Settings file not found at: {}",
+                zed_paths::settings_file().display()
+            )
+        );
     }
 
     #[tokio::test]

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use paths as zed_paths;
 use std::{
     fmt::{self, Display},
     path::{Path, PathBuf},

@@ -1,7 +1,8 @@
-use crate::sync::file_data::FileData;
+use crate::sync::local_file_data::LocalFileData;
 use anyhow::{Context, Result};
 use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
+use paths as zed_paths;
 use tracing::{info, instrument};
 
 // TODO: extract Client to a shared module to be used by both LSP and CLI tool crates
@@ -22,7 +23,7 @@ impl Client {
     }
 
     #[instrument(skip_all)]
-    pub async fn sync_file(&self, data: FileData) -> Result<(), Error> {
+    pub async fn sync_file(&self, data: LocalFileData) -> Result<(), Error> {
         info!("Syncing file: {}", data.path.display());
 
         let body = Self::process_file_body(&data.body, &data.path == zed_paths::settings_file())?;
