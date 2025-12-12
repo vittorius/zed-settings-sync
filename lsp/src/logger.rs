@@ -2,7 +2,7 @@ use std::env;
 use tracing::Level;
 use tracing_subscriber::{
     EnvFilter, Layer,
-    fmt::{self},
+    fmt::{self, time::ChronoLocal},
     layer::SubscriberExt,
     util::SubscriberInitExt,
 };
@@ -40,6 +40,7 @@ pub fn init_logger() {
         ); // silence tower-lsp
 
     let stderr_layer = fmt::layer()
+        .with_timer(ChronoLocal::rfc_3339())
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .with_target(false)
