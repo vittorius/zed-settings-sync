@@ -1,3 +1,4 @@
+use paths as zed_paths;
 use std::{
     env,
     error::Error,

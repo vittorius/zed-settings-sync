@@ -2,6 +2,7 @@ use crate::sync::local_file_data::LocalFileData;
 use anyhow::{Context, Result};
 use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
+use paths as zed_paths;
 use tracing::{info, instrument};
 
 // TODO: extract Client to a shared module to be used by both LSP and CLI tool crates

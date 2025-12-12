@@ -22,6 +22,8 @@ pub struct Config {
     pub github_token: String,
 }
 
+#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_panics_doc)]
 impl Config {
     pub fn from_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
@@ -68,14 +70,16 @@ impl Config {
         }
 
         Ok(Config {
-            github_token,
             gist_id,
+            github_token,
         })
     }
 }
 
+#[allow(clippy::expect_used)]
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use std::io::{Cursor, Seek};
 
     use assert_fs::prelude::*;

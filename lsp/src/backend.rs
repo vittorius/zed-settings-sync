@@ -2,8 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 use anyhow::Result;
-use serde::Deserialize;
-use serde_json::from_value;
+use common::config::Config;
 use tower_lsp::jsonrpc::Result as LspResult;
 use tower_lsp::lsp_types::{DidCloseTextDocumentParams, DidOpenTextDocumentParams};
 use tower_lsp::{
@@ -14,6 +13,7 @@ use tower_lsp::{
     },
 };
 use tracing::{debug, error, info, instrument};
+use zed_extension_api::serde_json::from_value;
 
 use crate::app_state::AppState;
 use crate::watching::{ZedConfigFilePath, ZedConfigPathError};
@@ -67,13 +67,6 @@ impl Backend {
 
         Ok(())
     }
-}
-
-// TODO: extract into a shared crate for use by both LSP and CLI tool
-#[derive(Debug, Deserialize)]
-struct Config {
-    gist_id: String,
-    github_token: String,
 }
 
 #[tower_lsp::async_trait]
