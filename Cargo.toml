@@ -13,6 +13,7 @@ octocrab = "0.48.1"
 zed_extension_api = "0.7.0"
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.41"
 paths = { git = "https://github.com/zed-industries/zed.git" }
 
 [dependencies]

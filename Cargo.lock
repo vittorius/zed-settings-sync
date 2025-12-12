@@ -513,6 +513,7 @@ dependencies = [
  "rpassword",
  "serde",
  "tokio",
+ "tracing",
  "zed_extension_api",
 ]
 

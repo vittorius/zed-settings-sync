@@ -1,11 +1,10 @@
-use crate::sync::local_file_data::LocalFileData;
+use crate::sync::LocalFileData;
 use anyhow::{Context, Result};
 use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
 use paths as zed_paths;
 use tracing::{info, instrument};
 
-// TODO: extract Client to a shared module to be used by both LSP and CLI tool crates
 #[derive(Debug)]
 pub struct Client {
     client: octocrab::Octocrab,
@@ -13,6 +12,7 @@ pub struct Client {
 }
 
 impl Client {
+    #[allow(clippy::missing_errors_doc)]
     pub fn new(gist_id: String, github_token: String) -> Result<Self> {
         let client = octocrab::Octocrab::builder()
             .personal_token(github_token)
@@ -22,6 +22,7 @@ impl Client {
         Ok(Self { client, gist_id })
     }
 
+    #[allow(clippy::missing_errors_doc)]
     #[instrument(skip_all)]
     pub async fn sync_file(&self, data: LocalFileData) -> Result<(), Error> {
         info!("Syncing file: {}", data.path.display());

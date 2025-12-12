@@ -8,6 +8,7 @@ pub struct LocalFileData {
 }
 
 impl LocalFileData {
+    #[allow(clippy::missing_errors_doc)]
     pub fn new(path: PathBuf, body: String) -> Result<Self> {
         Ok(Self {
             filename: path

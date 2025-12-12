@@ -1,7 +1,8 @@
 use anyhow::Result;
+use common::sync::Client;
 use std::sync::Arc;
 
-use crate::{sync::Client, watching::Store};
+use crate::watching::Store;
 
 #[derive(Debug)]
 pub struct AppState {
