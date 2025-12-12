@@ -1,6 +1,5 @@
 use anyhow::Result;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use crate::{sync::Client, watching::Store};
 
@@ -11,7 +10,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(gist_id: String, github_token: String) -> Result<Self> {
-        let sync_client = Arc::new(Mutex::new(Client::new(gist_id, github_token)?));
+        let sync_client = Arc::new(Client::new(gist_id, github_token)?);
         let watcher_store = Arc::new(Store::new(Arc::clone(&sync_client))?);
 
         Ok(Self { watcher_store })

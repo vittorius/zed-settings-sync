@@ -33,7 +33,7 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(client: Arc<Mutex<Client>>) -> Result<Self> {
+    pub fn new(client: Arc<Client>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
             let client_clone = Arc::clone(&client);
             Box::pin(async move {
@@ -43,7 +43,7 @@ impl Store {
                             return;
                         };
 
-                        if let Err(err) = client_clone.lock().await.sync_file(data).await {
+                        if let Err(err) = client_clone.sync_file(data).await {
                             log_sync_error(err);
                         }
                     }

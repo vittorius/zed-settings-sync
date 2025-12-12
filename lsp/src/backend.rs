@@ -1,9 +1,9 @@
 use std::path::PathBuf;
+use std::sync::{Arc, OnceLock};
 
 use anyhow::Result;
 use serde::Deserialize;
 use serde_json::from_value;
-use tokio::sync::Mutex;
 use tower_lsp::jsonrpc::Result as LspResult;
 use tower_lsp::lsp_types::{DidCloseTextDocumentParams, DidOpenTextDocumentParams};
 use tower_lsp::{
@@ -23,18 +23,16 @@ const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug)]
 pub struct Backend {
-    // Mutex is needed for interior mutability, Option - for delayed initialization;
+    // Arc is needed for cross-thread ownership (Tokio), OnceLock - for delayed initialization;
     // both of them - because of how the LanguageServer trait is defined by tower-lsp:
     // its methods don't mutate self.
-    // We have to use the async Mutex here because the `std::sync::Mutex` is not Send
-    // thus cannot be used in async functions.
-    app_state: Mutex<Option<AppState>>,
+    app_state: Arc<OnceLock<AppState>>,
 }
 
 impl Backend {
     pub fn new(_client: Client) -> Self {
         Self {
-            app_state: Mutex::new(None),
+            app_state: Arc::new(OnceLock::new()),
         }
     }
 
@@ -43,9 +41,7 @@ impl Backend {
 
         #[allow(clippy::expect_used)]
         self.app_state
-            .lock()
-            .await
-            .as_ref()
+            .get()
             .expect("App state must be already initialized")
             .watcher_store
             .watch(path)
@@ -61,9 +57,7 @@ impl Backend {
 
         #[allow(clippy::expect_used)]
         self.app_state
-            .lock()
-            .await
-            .as_ref()
+            .get()
             .expect("App state must be already initialized")
             .watcher_store
             .unwatch(path)
@@ -101,19 +95,18 @@ impl LanguageServer for Backend {
             tower_lsp::jsonrpc::Error::internal_error()
         })?;
 
-        {
-            let mut shared_app_state = self.app_state.lock().await;
+        #[allow(clippy::expect_used)]
+        self.app_state
+            .set(app_state)
+            .expect("AppState should not yet be initialized");
 
-            shared_app_state.replace(app_state);
-
-            #[allow(clippy::expect_used)]
-            shared_app_state
-                .as_ref()
-                .expect("App state should have been already initialized")
-                .watcher_store
-                .start_watcher()
-                .await;
-        }
+        #[allow(clippy::expect_used)]
+        self.app_state
+            .get()
+            .expect("App state should have been already initialized")
+            .watcher_store
+            .start_watcher()
+            .await;
 
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
