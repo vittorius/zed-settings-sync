@@ -1,6 +1,11 @@
 use std::env;
 use tracing::Level;
-use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    EnvFilter, Layer,
+    fmt::{self, time::ChronoLocal},
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 
 pub fn init_logger() {
     let log_level = env::var("ZED_SETTINGS_SYNC_LOG_LEVEL")
@@ -19,6 +24,11 @@ pub fn init_logger() {
     #[allow(clippy::expect_used)]
     let filter = EnvFilter::from_default_env()
         .add_directive(
+            format!("common={level}")
+                .parse()
+                .expect("Failed to parse log filter directive"),
+        )
+        .add_directive(
             format!("zed_settings_sync={level}")
                 .parse()
                 .expect("Failed to parse log filter directive"),
@@ -30,6 +40,7 @@ pub fn init_logger() {
         ); // silence tower-lsp
 
     let stderr_layer = fmt::layer()
+        .with_timer(ChronoLocal::rfc_3339())
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .with_target(false)

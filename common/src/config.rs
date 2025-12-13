@@ -25,7 +25,7 @@ pub struct Config {
 #[allow(clippy::missing_errors_doc)]
 #[allow(clippy::missing_panics_doc)]
 impl Config {
-    pub fn from_file() -> Result<Self> {
+    pub fn from_settings_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
         if !zed_paths::settings_file().try_exists()? {
             bail!(
@@ -105,7 +105,7 @@ mod tests {
             "#,
         )?;
 
-        let config = Config::from_file().expect("Failed to read config from file");
+        let config = Config::from_settings_file().expect("Failed to read config from file");
 
         assert_eq!(config.github_token, "your_github_token");
         assert_eq!(config.gist_id, "your_gist_id");
@@ -115,7 +115,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_settings_file_is_missing() {
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -130,7 +130,7 @@ mod tests {
     async fn test_from_file_fails_when_settings_file_is_empty() -> Result<()> {
         zed_config_file().touch()?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(config.unwrap_err().to_string(), "Settings file is empty");
 
@@ -141,7 +141,7 @@ mod tests {
     async fn test_from_file_fails_when_config_is_missing_lsp_key() -> Result<()> {
         zed_config_file().write_str("{}")?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -155,7 +155,7 @@ mod tests {
     async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_key() -> Result<()> {
         zed_config_file().write_str(r#"{"lsp": {}}"#)?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -177,7 +177,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -200,7 +200,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(config.unwrap_err().to_string(), "missing field `gist_id`");
 
@@ -222,7 +222,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
