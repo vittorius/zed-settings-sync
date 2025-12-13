@@ -23,6 +23,7 @@
 
 - [ ] Handle errors more beautifully, introduce the dedicated Error type if needed
 - [ ] Log output through tracing subscriber and/or add coloring of various levels of output messages
+– [ ] Add cross-platform colored plain chars for CLI output instead of colored circle emojis
 
 ## CI
 
