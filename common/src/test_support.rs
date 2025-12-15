@@ -9,12 +9,13 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
+use crate::ZED_CONFIG_FILE_NAME;
+
 static ZED_CONFIG_DIR: LazyLock<TempDir> =
     LazyLock::new(|| TempDir::new().expect("Failed to create temporary Zed config directory"));
 static READ_PASSWORD_INPUTS_REVERSED: LazyLock<Mutex<Vec<String>>> =
     LazyLock::new(|| Mutex::new(vec![FAKE_GITHUB_TOKEN.to_string(), String::new()]));
 
-const ZED_CONFIG_FILE_NAME: &str = "settings.json";
 pub const FAKE_GITHUB_TOKEN: &str = "gho_1234567890";
 
 pub fn zed_config_dir() -> &'static TempDir {
@@ -22,7 +23,7 @@ pub fn zed_config_dir() -> &'static TempDir {
 }
 
 pub fn zed_config_file() -> ChildPath {
-    zed_config_dir().child(ZED_CONFIG_FILE_NAME)
+    zed_config_dir().child(*ZED_CONFIG_FILE_NAME)
 }
 
 // must be called from a single test function,
@@ -41,7 +42,7 @@ pub mod zed_paths {
     use super::{ZED_CONFIG_DIR, ZED_CONFIG_FILE_NAME};
 
     pub fn settings_file() -> PathBuf {
-        ZED_CONFIG_DIR.path().join(ZED_CONFIG_FILE_NAME)
+        ZED_CONFIG_DIR.path().join(*ZED_CONFIG_FILE_NAME)
     }
 
     pub fn config_dir() -> PathBuf {

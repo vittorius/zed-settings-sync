@@ -1,5 +1,6 @@
 use crate::sync::LocalFileData;
 use anyhow::{Context, Result};
+
 use jsonc_parser::{ParseOptions, cst::CstRootNode, errors::ParseError};
 use octocrab::{Error as OctocrabError, GitHubError};
 use paths as zed_paths;
