@@ -2,6 +2,7 @@ use paths as zed_paths;
 use std::sync::LazyLock;
 
 pub mod config;
+pub mod interactive_io;
 pub mod sync;
 pub mod test_support;
 

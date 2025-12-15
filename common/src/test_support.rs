@@ -1,15 +1,16 @@
 // TODO: consider extracting this module into a separate local crate
+// TODO: split into submodules
 
 #![allow(clippy::pedantic)]
 #![allow(clippy::expect_used)]
 
 use assert_fs::{TempDir, fixture::ChildPath, prelude::PathChild};
 use std::{
-    io,
+    io::{self, BufRead, Cursor, Seek, Write},
     sync::{LazyLock, Mutex},
 };
 
-use crate::ZED_CONFIG_FILE_NAME;
+use crate::{ZED_CONFIG_FILE_NAME, interactive_io::InteractiveIO};
 
 static ZED_CONFIG_DIR: LazyLock<TempDir> =
     LazyLock::new(|| TempDir::new().expect("Failed to create temporary Zed config directory"));
@@ -17,6 +18,44 @@ static READ_PASSWORD_INPUTS_REVERSED: LazyLock<Mutex<Vec<String>>> =
     LazyLock::new(|| Mutex::new(vec![FAKE_GITHUB_TOKEN.to_string(), String::new()]));
 
 pub const FAKE_GITHUB_TOKEN: &str = "gho_1234567890";
+
+pub struct CursorInteractiveIO<'a> {
+    input: Cursor<&'a str>,
+    output: Cursor<Vec<u8>>,
+}
+
+impl<'a> CursorInteractiveIO<'a> {
+    pub fn new(input: &'a str) -> Self {
+        Self {
+            input: Cursor::new(input),
+            output: Cursor::new(Vec::new()),
+        }
+    }
+
+    pub fn rewind_output(&mut self) -> io::Result<()> {
+        self.output.rewind()
+    }
+
+    pub fn output_lines(self) -> impl Iterator<Item = Result<String, io::Error>> {
+        self.output.lines()
+    }
+}
+
+impl InteractiveIO for CursorInteractiveIO<'_> {
+    fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
+        self.input.read_line(buf)
+    }
+
+    fn write_line(&mut self, line: &str) -> io::Result<()> {
+        self.output.write_all(line.as_bytes())?;
+        self.output.write_all(b"\n")?;
+        Ok(())
+    }
+
+    fn write(&mut self, text: &str) -> io::Result<()> {
+        self.output.write_all(text.as_bytes())
+    }
+}
 
 pub fn zed_config_dir() -> &'static TempDir {
     &ZED_CONFIG_DIR

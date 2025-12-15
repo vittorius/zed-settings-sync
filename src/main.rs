@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{self, Write, stdin, stdout},
+    io::{Write, stdin, stdout},
 };
 
 use anyhow::Result;
@@ -11,6 +11,10 @@ use common::test_support::zed_paths;
 use paths as zed_paths;
 
 use common::{config::Config, sync::Client};
+
+use crate::std_interactive_io::StdInteractiveIO;
+
+mod std_interactive_io;
 
 #[derive(Debug, Parser)]
 #[command(about = "Zed Settings Sync extension CLI tool", long_about = None)]
@@ -40,9 +44,7 @@ async fn main() -> Result<()> {
                 Config::from_settings_file()?
             } else {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
-                let mut stdin = io::stdin().lock();
-                let mut stdout = io::stdout().lock();
-                Config::from_interactive_io(&mut stdin, &mut stdout)?
+                Config::from_interactive_io(&mut StdInteractiveIO)?
             };
 
             let client = Client::new(config.gist_id, config.github_token)?;
