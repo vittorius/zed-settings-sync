@@ -66,7 +66,7 @@ impl Client {
             .files
             .into_iter()
             .filter(|(file_name, file)| {
-                file_name.eq_ignore_ascii_case(".json") && file.content.is_some()
+                file_name.to_lowercase().ends_with(".json") && file.content.is_some()
             })
             .map(|(file_name, file)| {
                 match Self::process_file_body_on_load(

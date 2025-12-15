@@ -78,7 +78,7 @@ fn process_loaded_file(file_name: String, content: String, force: bool) -> Resul
         stdin().read_line(&mut answer)?;
 
         if answer.trim().to_lowercase().starts_with('y') {
-            println!("🔴 Overwriting {file_name}...");
+            println!("Overwriting {file_name}...");
         } else {
             println!("Skipping {file_name}");
             return Ok(());
