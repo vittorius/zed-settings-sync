@@ -3,8 +3,8 @@
 // Example:
 [
   {
-    "label": "cargo nextest $ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
-    "command": "cargo nextest run $ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
+    "label": "cargo nextest $ZED_CUSTOM_RUST_PACKAGE::$ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
+    "command": "cargo nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_CUSTOM_RUST_TEST_FRAGMENT::tests::$ZED_CUSTOM_RUST_TEST_NAME",
     "tags": ["rust-test"],
     "env": {
       // "NEXTEST_FAILURE_OUTPUT": "immediate",
