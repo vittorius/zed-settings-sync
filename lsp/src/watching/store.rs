@@ -1,7 +1,7 @@
 use crate::watching::{EventHandler, PathWatcher};
 use anyhow::Result;
 use anyhow::{Context, anyhow, bail};
-use common::sync::{Client, Error as SyncError, LocalFileData};
+use common::sync::{Client, LocalFileData};
 use notify::{Event, EventKind, event::ModifyKind};
 use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
@@ -42,7 +42,7 @@ impl Store {
                         };
 
                         if let Err(err) = client_clone.sync_file(data).await {
-                            log_sync_error(err);
+                            error!("{}", err);
                         }
                     }
                     Err(err) => error!("Could not process file event: {err}"),
@@ -112,27 +112,4 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
     let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
 
     Ok(Some(LocalFileData::new(path, body)?))
-}
-
-fn log_sync_error(err: SyncError) {
-    match err {
-        SyncError::InvalidJson(source) => {
-            error!("Invalid JSON in config file: {}", source);
-        }
-        SyncError::InvalidConfig(message) => {
-            error!("Invalid config file structure: {}", message);
-        }
-        SyncError::Github(source) => {
-            error!("Could not sync saved file due to Github error: {}", source);
-        }
-        SyncError::Internal(source) => {
-            error!(
-                "Could not sync saved file due to an internal error: {:?}",
-                source
-            );
-        }
-        SyncError::UnhandledInternal(message) => {
-            error!("{message}");
-        }
-    }
 }

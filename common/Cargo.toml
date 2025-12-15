@@ -13,6 +13,7 @@ octocrab = { workspace = true }
 serde = { workspace = true }
 zed_extension_api = { workspace = true }
 paths = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 assert_fs = "1.1.3"
