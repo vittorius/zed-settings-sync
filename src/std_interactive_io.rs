@@ -10,12 +10,18 @@ impl InteractiveIO for StdInteractiveIO {
     }
 
     fn write_line(&mut self, line: &str) -> io::Result<()> {
-        io::stdout().write_all(line.as_bytes())?;
-        io::stdout().write_all(b"\n")?;
+        let mut lock = io::stdout().lock();
+        lock.write_all(line.as_bytes())?;
+        lock.write_all(b"\n")?;
+
         Ok(())
     }
 
     fn write(&mut self, text: &str) -> io::Result<()> {
-        io::stdout().write_all(text.as_bytes())
+        let mut lock = io::stdout().lock();
+        lock.write_all(text.as_bytes())?;
+        lock.flush()?;
+
+        Ok(())
     }
 }

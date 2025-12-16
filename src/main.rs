@@ -1,8 +1,3 @@
-use std::{
-    fs,
-    io::{Write, stdin, stdout},
-};
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 #[cfg(test)]
@@ -13,8 +8,10 @@ use paths as zed_paths;
 use common::{config::Config, sync::Client};
 
 use crate::std_interactive_io::StdInteractiveIO;
+use crate::sync::Loader;
 
 mod std_interactive_io;
+mod sync;
 
 #[derive(Debug, Parser)]
 #[command(about = "Zed Settings Sync extension CLI tool", long_about = None)]
@@ -36,6 +33,7 @@ pub enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
+    let mut std_io = StdInteractiveIO;
 
     match args.command {
         Command::Load { force } => {
@@ -44,52 +42,17 @@ async fn main() -> Result<()> {
                 Config::from_settings_file()?
             } else {
                 println!("Zed settings file not found, probably you haven't installed Zed yet?");
-                Config::from_interactive_io(&mut StdInteractiveIO)?
+                Config::from_interactive_io(&mut std_io)?
             };
 
             let client = Client::new(config.gist_id, config.github_token)?;
+            let mut loader = Loader::new(&client, &mut std_io, force);
 
-            load(&client, force).await?;
+            loader.load_files().await?;
         }
     };
 
     println!("🟢 All done.");
-
-    Ok(())
-}
-
-async fn load(client: &Client, force: bool) -> Result<()> {
-    for file_load_result in client.load_files().await? {
-        match file_load_result {
-            Ok((file_name, content)) => process_loaded_file(file_name, content, force)?,
-            Err(e) => println!("🔴 {}", e),
-        }
-    }
-
-    Ok(())
-}
-
-fn process_loaded_file(file_name: String, content: String, force: bool) -> Result<()> {
-    let file_path = zed_paths::config_dir().join(&file_name);
-
-    if file_path.exists() && !force {
-        print!("🟡 {file_name} exists, overwrite (y/n)? ");
-        stdout().flush()?;
-
-        let mut answer = String::new();
-        stdin().read_line(&mut answer)?;
-
-        if answer.trim().to_lowercase().starts_with('y') {
-            println!("Overwriting {file_name}...");
-        } else {
-            println!("Skipping {file_name}");
-            return Ok(());
-        }
-    }
-
-    fs::write(file_path, content)?;
-
-    println!("Written {file_name}");
 
     Ok(())
 }
