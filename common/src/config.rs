@@ -9,6 +9,7 @@ use crate::test_support::read_password;
 use crate::test_support::zed_paths;
 use anyhow::{Result, anyhow, bail};
 use jsonc_parser::{ParseOptions, parse_to_serde_value};
+use mockall::automock;
 #[cfg(not(test))]
 use paths as zed_paths;
 #[cfg(not(test))]
@@ -18,13 +19,24 @@ use zed_extension_api::serde_json::from_value;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub gist_id: String,
-    pub github_token: String,
+    gist_id: String,
+    github_token: String,
 }
 
 #[allow(clippy::missing_errors_doc)]
 #[allow(clippy::missing_panics_doc)]
+#[automock]
 impl Config {
+    #[must_use]
+    pub fn gist_id(&self) -> &str {
+        &self.gist_id
+    }
+
+    #[must_use]
+    pub fn github_token(&self) -> &str {
+        &self.github_token
+    }
+
     pub fn from_settings_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
         if !zed_paths::settings_file().try_exists()? {
@@ -48,7 +60,7 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_interactive_io(io: &mut impl InteractiveIO) -> Result<Self> {
+    pub fn from_interactive_io(io: &mut dyn InteractiveIO) -> Result<Self> {
         io.write_line("Enter your Github token:")?;
         let mut github_token: String;
 
@@ -85,13 +97,13 @@ impl Config {
 mod tests {
     use assert_fs::prelude::*;
 
-    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_config_file};
+    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_settings_file};
 
     use super::*;
 
     #[tokio::test]
     async fn test_from_file_successfully_reads_correct_config_structure() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
                 "lsp": {
@@ -129,7 +141,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_settings_file_is_empty() -> Result<()> {
-        zed_config_file().touch()?;
+        zed_settings_file().touch()?;
 
         let config = Config::from_settings_file();
 
@@ -140,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_key() -> Result<()> {
-        zed_config_file().write_str("{}")?;
+        zed_settings_file().write_str("{}")?;
 
         let config = Config::from_settings_file();
 
@@ -154,7 +166,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_key() -> Result<()> {
-        zed_config_file().write_str(r#"{"lsp": {}}"#)?;
+        zed_settings_file().write_str(r#"{"lsp": {}}"#)?;
 
         let config = Config::from_settings_file();
 
@@ -169,7 +181,7 @@ mod tests {
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_initialization_options_key()
     -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {
@@ -190,7 +202,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_gist_id_key() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {
@@ -210,7 +222,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_github_token_key() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {

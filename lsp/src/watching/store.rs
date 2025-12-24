@@ -31,7 +31,7 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(client: Arc<Client>) -> Result<Self> {
+    pub fn new(client: Arc<dyn Client>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
             let client_clone = Arc::clone(&client);
             Box::pin(async move {

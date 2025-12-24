@@ -61,7 +61,7 @@ pub fn zed_config_dir() -> &'static TempDir {
     &ZED_CONFIG_DIR
 }
 
-pub fn zed_config_file() -> ChildPath {
+pub fn zed_settings_file() -> ChildPath {
     zed_config_dir().child(*ZED_CONFIG_FILE_NAME)
 }
 

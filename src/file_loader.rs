@@ -4,18 +4,19 @@ use anyhow::Result;
 #[cfg(test)]
 use common::test_support::zed_paths;
 use common::{interactive_io::InteractiveIO, sync::Client};
+use mockall::mock;
 #[cfg(not(test))]
 use paths as zed_paths;
 
-pub struct Loader<'a> {
-    client: &'a Client,
+pub struct FileLoader<'a> {
+    client: &'a dyn Client,
     io: &'a mut dyn InteractiveIO,
     force: bool,
 }
 
-impl<'a> Loader<'a> {
-    pub fn new(client: &'a Client, io: &'a mut dyn InteractiveIO, force: bool) -> Self {
-        Loader { client, io, force }
+impl<'a> FileLoader<'a> {
+    pub fn new(client: &'a dyn Client, io: &'a mut dyn InteractiveIO, force: bool) -> Self {
+        FileLoader { client, io, force }
     }
 
     pub async fn load_files(&mut self) -> Result<()> {
@@ -51,6 +52,38 @@ impl<'a> Loader<'a> {
 
         self.io.write_line(&format!("Written {file_name}"))?;
 
+        Ok(())
+    }
+}
+
+mock! {
+    pub FileLoader {
+        pub fn new<'a>(client: &'a dyn Client, io: &'a mut dyn InteractiveIO, force: bool) -> Self;
+        pub async fn load_files(&mut self) -> Result<()>;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(dead_code)]
+
+    use anyhow::Result;
+    use common::sync::{Error, FileResult};
+
+    // TODO:
+    fn empty_iter() -> Result<Box<dyn Iterator<Item = FileResult>>, Error> {
+        Ok(Box::new([].into_iter()))
+    }
+
+    async fn test_non_existing_file_is_written() -> Result<()> {
+        Ok(())
+    }
+
+    async fn test_existing_file_is_written_if_confirmed() -> Result<()> {
+        Ok(())
+    }
+
+    async fn test_existing_file_is_written_if_not_confirmed() -> Result<()> {
         Ok(())
     }
 }
