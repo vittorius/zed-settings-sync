@@ -68,7 +68,15 @@ mod tests {
     #![allow(dead_code)]
 
     use anyhow::Result;
-    use common::sync::{Error, FileResult};
+    use assert_fs::prelude::*;
+    use common::{
+        interactive_io::MockInteractiveIO,
+        sync::{Error, FileError, FileResult, MockGithubClient},
+    };
+    use mockall::{Sequence, predicate};
+    use test_support::zed_config_dir;
+
+    use super::*;
 
     // TODO: use if applicable
     fn empty_iter() -> Result<Box<dyn Iterator<Item = FileResult>>, Error> {
@@ -76,7 +84,18 @@ mod tests {
     }
 
     async fn test_non_existing_file_is_written() -> Result<()> {
-        todo!()
+        zed_config_dir().child("tasks.json").touch()?;
+
+        let mut mock_client = MockGithubClient::default();
+        mock_client.expect_load_files().returning(|| {
+            Ok(Box::new(
+                [Ok(("tasks.json".to_string(), "content".to_string()))].into_iter(),
+            ))
+        });
+
+        // TODO: finish the test
+
+        Ok(())
     }
 
     async fn test_existing_file_is_written_if_confirmed() -> Result<()> {
@@ -85,5 +104,35 @@ mod tests {
 
     async fn test_existing_file_is_written_if_not_confirmed() -> Result<()> {
         todo!()
+    }
+
+    #[tokio::test]
+    async fn test_file_error_reporting() -> Result<()> {
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        let build_error = || {
+            FileError::from_error(
+                "tasks.json",
+                Error::UnhandledInternal("Unhandled internal error".to_string()),
+            )
+        };
+        let error_msg = build_error().to_string();
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(move || Ok(Box::new([Err(build_error())].into_iter())))
+            .once();
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq(format!("🔴 {}", error_msg)))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, false);
+        file_loader.load_files().await
     }
 }

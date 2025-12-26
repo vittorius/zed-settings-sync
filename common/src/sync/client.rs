@@ -37,7 +37,7 @@ pub struct FileError {
 }
 
 impl FileError {
-    fn from_error(file_name: impl Into<String>, error: Error) -> Self {
+    pub fn from_error(file_name: impl Into<String>, error: Error) -> Self {
         Self {
             file_name: file_name.into(),
             error,
