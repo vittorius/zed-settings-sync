@@ -117,7 +117,6 @@ mod tests {
                 Error::UnhandledInternal("Unhandled internal error".to_string()),
             )
         };
-        let error_msg = build_error().to_string();
         mock_client
             .expect_load_files()
             .in_sequence(&mut seq)
@@ -128,7 +127,7 @@ mod tests {
         mock_io
             .expect_write_line()
             .in_sequence(&mut seq)
-            .with(predicate::eq(format!("🔴 {}", error_msg)))
+            .with(predicate::eq(format!("🔴 {}", build_error())))
             .returning(|_| Ok(()))
             .once();
 
