@@ -182,20 +182,4 @@ mock! {
         async fn load_files(&self)
             -> Result<Box<dyn Iterator<Item = FileResult>>, Error>;
     }
-
-    // impl fmt::Debug for GithubClient {
-    //     fn fmt<'a>(&self, f: &mut std::fmt::Formatter<'a>) -> std::fmt::Result {
-    //         f.debug_struct("GithubClient")
-    //             .finish()
-    //     }
-    // }
-
-    // impl PartialEq for GithubClient {
-    //     fn eq(&self, other: &Self) -> bool {
-    //         self.gist_id == other.gist_id && self.github_token == other.github_token
-    //     }
-    // }
-
-    // impl Eq for GithubClient {}
-
 }
