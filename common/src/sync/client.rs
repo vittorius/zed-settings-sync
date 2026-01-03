@@ -25,7 +25,7 @@ pub trait Client: Send + Sync {
         async_fn_in_trait,
         reason = "This trait is intended to be used by zed-settings-sync crate only"
     )]
-    async fn load_files<'a>(&'a self) -> Result<Box<dyn Iterator<Item = FileResult> + 'a>, Error>;
+    async fn load_files(&self) -> Result<Box<dyn Iterator<Item = FileResult>>, Error>;
 }
 
 #[derive(Error, Debug)]
