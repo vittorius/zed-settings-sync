@@ -65,8 +65,6 @@ mock! {
 
 #[cfg(test)]
 mod tests {
-    #![allow(dead_code)]
-
     use anyhow::Result;
     use common::sync::{Error, FileResult};
 
@@ -76,14 +74,14 @@ mod tests {
     }
 
     async fn test_non_existing_file_is_written() -> Result<()> {
-        Ok(())
+        todo!()
     }
 
     async fn test_existing_file_is_written_if_confirmed() -> Result<()> {
-        Ok(())
+        todo!()
     }
 
     async fn test_existing_file_is_written_if_not_confirmed() -> Result<()> {
-        Ok(())
+        todo!()
     }
 }

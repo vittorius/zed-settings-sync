@@ -60,7 +60,7 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_interactive_io(io: &mut dyn InteractiveIO) -> Result<Self> {
+    pub fn from_interactive_io<T: InteractiveIO + 'static>(io: &mut T) -> Result<Self> {
         io.write_line("Enter your Github token:")?;
         let mut github_token: String;
 

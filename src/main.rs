@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn load(io: &mut dyn InteractiveIO, force: bool) -> Result<()> {
+async fn load<T: InteractiveIO + 'static>(io: &mut T, force: bool) -> Result<()> {
     let config = if zed_paths::settings_file().exists() {
         io.write_line("Loading settings from file")?;
         Config::from_settings_file()?
@@ -175,14 +175,16 @@ mod tests {
         setup_interactive_io_mock(&mut io, &mut seq);
 
         let ctx = MockConfig::from_interactive_io_context();
-        ctx.expect().in_sequence(&mut seq).returning(|_io| {
-            let mut mock_config = MockConfig::default();
-            mock_config.expect_gist_id().return_const(String::default());
-            mock_config
-                .expect_github_token()
-                .return_const(String::default());
-            Ok(mock_config)
-        });
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config.expect_gist_id().return_const(String::default());
+                mock_config
+                    .expect_github_token()
+                    .return_const(String::default());
+                Ok(mock_config)
+            });
 
         // we need to create contexts in the test function so they are not dropped before the test finishes
         let gh_ctx = MockGithubClient::new_context();
@@ -200,14 +202,16 @@ mod tests {
         setup_interactive_io_mock(&mut io, &mut seq);
 
         let ctx = MockConfig::from_interactive_io_context();
-        ctx.expect().in_sequence(&mut seq).returning(|_io| {
-            let mut mock_config = MockConfig::default();
-            mock_config.expect_gist_id().return_const(String::default());
-            mock_config
-                .expect_github_token()
-                .return_const(String::default());
-            Ok(mock_config)
-        });
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config.expect_gist_id().return_const(String::default());
+                mock_config
+                    .expect_github_token()
+                    .return_const(String::default());
+                Ok(mock_config)
+            });
 
         // we need to create contexts in the test function so they are not dropped before the test finishes
         let gh_ctx = MockGithubClient::new_context();
@@ -228,16 +232,18 @@ mod tests {
         setup_interactive_io_mock(&mut io, &mut seq);
 
         let ctx = MockConfig::from_interactive_io_context();
-        ctx.expect().in_sequence(&mut seq).returning(|_io| {
-            let mut mock_config = MockConfig::default();
-            mock_config
-                .expect_gist_id()
-                .return_const(gist_id.to_string());
-            mock_config
-                .expect_github_token()
-                .return_const(github_token.to_string());
-            Ok(mock_config)
-        });
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config
+                    .expect_gist_id()
+                    .return_const(gist_id.to_string());
+                mock_config
+                    .expect_github_token()
+                    .return_const(github_token.to_string());
+                Ok(mock_config)
+            });
 
         // we need to create contexts in the test function so they are not dropped before the test finishes
         let gh_ctx = MockGithubClient::new_context();
