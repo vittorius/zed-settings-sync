@@ -1,0 +1,11 @@
+name: Install cargo nextest
+description: Installs the latest version of Nextest as a cargo subcommand
+
+runs:
+  using: composite
+  steps:
+    - name: install cargo nextest
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-nextest
+        locked: true
