@@ -65,10 +65,12 @@ mock! {
 
 #[cfg(test)]
 mod tests {
+    #![allow(dead_code)]
+
     use anyhow::Result;
     use common::sync::{Error, FileResult};
 
-    // TODO:
+    // TODO: use if applicable
     fn empty_iter() -> Result<Box<dyn Iterator<Item = FileResult>>, Error> {
         Ok(Box::new([].into_iter()))
     }
