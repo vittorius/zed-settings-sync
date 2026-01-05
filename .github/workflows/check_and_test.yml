@@ -28,38 +28,23 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
             bootstrap: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
-            binary: cargo
 
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
-            # bootstrap: |
-            #   sudo apt-get update
-            #   sudo apt-get -y install podman
-            #   cargo install cross
-            #   cargo clean
-            # binary: cross
-            binary: cargo
 
           - target: x86_64-apple-darwin
-            runner: macos-latest
-            bootstrap: |
-              arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-              arch -x86_64 /usr/local/bin/brew install openssl@3
-              echo "OPENSSL_DIR=$(/usr/local/bin/brew --prefix openssl@3)" >> $GITHUB_ENV
-            binary: cargo
+            runner: macos-15-intel
 
           - target: aarch64-apple-darwin
             runner: macos-latest
             bootstrap: echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
-            binary: cargo
 
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
-            binary: cargo
 
           - target: aarch64-pc-windows-msvc
             runner: windows-11-arm
-            binary: cargo
+
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -77,4 +62,4 @@ jobs:
         run: ${{ matrix.bootstrap }}
 
       - name: test
-        run: ${{ matrix.binary }} nextest run --workspace
+        run: cargo nextest run --workspace
