@@ -1,5 +1,4 @@
 // TODO: consider extracting this module into a separate local crate
-// NOTE: these FS tests don't contain any Mutexes to synchronize access to shared files so they must be run sequentially or in parallel processes (usually, via Nextest)
 
 #![allow(clippy::pedantic)]
 #![allow(clippy::expect_used)]
