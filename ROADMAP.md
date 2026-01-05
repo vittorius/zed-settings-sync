@@ -18,11 +18,14 @@
       – [ ] (experimental) Rewrite the LSP server to use structured async concurrency, thread-per-code async runtime, and get rid of Arc's around every data structure
 - [ ] Add secrecy crate and use it for all usages of the Github token
 - [ ] To support multiple sync providers, implement a SyncClient trait and use it for all sync operations. Move it to the "common" crate.
+- [ ] Report a sync error in a visible way (crash the server? know how to report an LSP error inside Zed?)
 
 ### CLI tool
 
 - [ ] Handle errors more beautifully, introduce the dedicated Error type if needed
 - [ ] Log output through tracing subscriber and/or add coloring of various levels of output messages
+      – [ ] Add cross-platform colored plain chars for CLI output instead of colored circle emojis
+- [ ] Refactor to get rid of the InteractiveIO trait in favor of BufRead + Write type (trait), see https://t.me/rustlang_ua/69909/132141
 
 ## CI
 

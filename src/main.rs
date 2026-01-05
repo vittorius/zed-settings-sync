@@ -1,17 +1,21 @@
-use std::{
-    fs,
-    io::{self, Write, stdin, stdout},
-};
-
-use anyhow::{Context, Result, anyhow};
+#[double]
+use crate::file_loader::FileLoader;
+use crate::std_interactive_io::StdInteractiveIO;
+use anyhow::Result;
 use clap::{Parser, Subcommand};
+#[double]
+use common::config::Config;
+use common::interactive_io::InteractiveIO;
+#[double]
+use common::sync::GithubClient;
 #[cfg(test)]
 use common::test_support::zed_paths;
-use jsonc_parser::{ParseOptions, cst::CstRootNode};
+use mockall_double::double;
 #[cfg(not(test))]
 use paths as zed_paths;
 
-use common::config::Config;
+mod file_loader;
+mod std_interactive_io;
 
 #[derive(Debug, Parser)]
 #[command(about = "Zed Settings Sync extension CLI tool", long_about = None)]
@@ -33,102 +37,226 @@ pub enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
+    let mut std_io = StdInteractiveIO;
 
     match args.command {
         Command::Load { force } => {
-            let config = if zed_paths::settings_file().exists() {
-                println!("Loading settings from file");
-                Config::from_file()?
-            } else {
-                println!("Zed settings file not found, probably you haven't installed Zed yet?");
-                let mut stdin = io::stdin().lock();
-                let mut stdout = io::stdout().lock();
-                Config::from_interactive_io(&mut stdin, &mut stdout)?
-            };
-
-            load(&config, force).await?;
+            load(&mut std_io, force).await?;
         }
     };
 
-    println!("🟢 All done.");
+    std_io.write_line("🟢 All done.")?;
 
     Ok(())
 }
 
-async fn load(config: &Config, force: bool) -> Result<()> {
-    // TODO: use the logic to load the gist contents from the shared Client type/module
-    let octocrab = octocrab::Octocrab::builder()
-        .personal_token(config.github_token.clone())
-        .build()
-        .with_context(|| "Failed to build the Github client")?;
+async fn load<T: InteractiveIO + 'static>(io: &mut T, force: bool) -> Result<()> {
+    let config = if zed_paths::settings_file().exists() {
+        io.write_line("Loading settings from file")?;
+        Config::from_settings_file()?
+    } else {
+        io.write_line("Zed settings file not found, probably you haven't installed Zed yet?")?;
+        Config::from_interactive_io(io)?
+    };
 
-    let gist = octocrab.gists().get(&config.gist_id).await?;
+    let client = GithubClient::new(config.gist_id().into(), config.github_token().into())?;
+    let mut loader = FileLoader::new(&client, io, force);
 
-    for (file_name, file) in gist.files {
-        if !file_name.ends_with(".json") || file.content.is_none() {
-            continue;
-        }
+    loader.load_files().await
+}
 
-        let file_path = zed_paths::config_dir().join(&file_name);
+#[cfg(test)]
+mod tests {
+    use crate::file_loader::{
+        __mock_MockFileLoader::__new::Context as MockFileLoaderNewContext, MockFileLoader,
+    };
+    use anyhow::Result;
+    use assert_fs::prelude::*;
+    use common::{
+        config::MockConfig,
+        interactive_io::MockInteractiveIO,
+        sync::{
+            __mock_MockGithubClient::__new::Context as MockGithubClientNewContext, Client,
+            MockGithubClient,
+        },
+        test_support::zed_settings_file,
+    };
+    use mockall::{Sequence, predicate};
 
-        if file_path.exists() && !force {
-            print!("🟡 {file_name} exists, overwrite (y/n)? ");
-            stdout().flush()?;
+    use super::*;
 
-            let mut answer = String::new();
-            stdin().read_line(&mut answer)?;
-
-            if answer.trim().to_lowercase().starts_with('y') {
-                println!("🔴 Overwriting {file_name}...");
-            } else {
-                println!("Skipping {file_name}");
-                continue;
-            }
-        }
-
-        let mut content = file
-            .content
-            .expect("File content is already checked for presence");
-
-        let settings_file_name = zed_paths::settings_file();
-        let settings_file_name = settings_file_name
-            .file_name()
-            .with_context(|| {
-                format!(
-                    "Settings file path ends with invalid file name: {}",
-                    zed_paths::settings_file().display()
-                )
-            })?
-            .to_string_lossy();
-
-        if file_name == settings_file_name {
-            let root = CstRootNode::parse(&content, &ParseOptions::default())?;
-            let root_obj = root.object_value_or_set();
-            root_obj
-                .get("lsp")
-                .ok_or(anyhow!(r#"Missing "lsp" key"#))?
-                .object_value()
-                .ok_or(anyhow!(r#"Missing "lsp" configuration object"#))?
-                .get("settings_sync")
-                .ok_or(anyhow!(r#"Missing "settings_sync" key"#))?
-                .object_value()
-                .ok_or(anyhow!(r#"Missing "settings_sync" configuration object"#))?
-                .get("initialization_options")
-                .ok_or(anyhow!(r#"Missing "initialization_options" key"#))?
-                .object_value()
-                .ok_or(anyhow!(
-                    r#"Missing "initialization_options" configuration object"#
-                ))?
-                .get("github_token")
-                .ok_or(anyhow!("Missing github_token"))?
-                .set_value(config.github_token.clone().into());
-            content = root.to_string();
-        }
-
-        fs::write(file_path, content)?;
-
-        println!("Written {file_name}");
+    fn setup_interactive_io_mock(io: &mut MockInteractiveIO, seq: &mut Sequence) {
+        io.expect_write_line()
+            .in_sequence(seq)
+            .returning(|_| Ok(()))
+            .with(predicate::eq(
+                "Zed settings file not found, probably you haven't installed Zed yet?",
+            ));
     }
 
-    Ok(())
+    // TODO: group all params into a struct
+    fn setup_client_and_loader_mocks(
+        seq: &mut Sequence,
+        gh_client_ctx: &MockGithubClientNewContext,
+        file_loader_ctx: &MockFileLoaderNewContext,
+        force: bool,
+        gist_id: Option<String>,
+        github_token: Option<String>,
+    ) {
+        gh_client_ctx.expect().in_sequence(seq).returning(
+            move |gist_id_received, github_token_received| {
+                if let Some(ref gist_id_value) = gist_id {
+                    assert_eq!(gist_id_value, &gist_id_received);
+                }
+                if let Some(ref github_token_value) = github_token {
+                    assert_eq!(github_token_value, &github_token_received);
+                }
+
+                let mut mock_github_client = MockGithubClient::default();
+                mock_github_client
+                    .expect_id()
+                    .return_const("mock_client_id".to_string());
+                Ok(mock_github_client)
+            },
+        );
+
+        file_loader_ctx
+            .expect()
+            .in_sequence(seq)
+            .returning(move |client, _io, force_received| {
+                // testing that FileLoader has received the correct client, configured from Config properties
+                let mock_github_client: &MockGithubClient =
+                    unsafe { &(*(client as *const dyn Client as *const MockGithubClient)) };
+                assert_eq!(mock_github_client.id(), "mock_client_id");
+
+                assert_eq!(force, force_received);
+
+                let mut mock_file_loader = MockFileLoader::default();
+                mock_file_loader.expect_load_files().returning(|| Ok(()));
+                mock_file_loader
+            });
+    }
+
+    #[tokio::test]
+    async fn test_config_is_built_from_settings_file_if_it_exists() -> Result<()> {
+        zed_settings_file().touch()?;
+
+        let mut seq = Sequence::new();
+
+        let mut io = MockInteractiveIO::default();
+        io.expect_write_line()
+            .in_sequence(&mut seq)
+            .returning(|_| Ok(()))
+            .with(predicate::eq("Loading settings from file"));
+
+        let ctx = MockConfig::from_settings_file_context();
+        ctx.expect().in_sequence(&mut seq).returning(|| {
+            let mut mock_config = MockConfig::default();
+            mock_config.expect_gist_id().return_const(String::default());
+            mock_config
+                .expect_github_token()
+                .return_const(String::default());
+            Ok(mock_config)
+        });
+
+        // we need to create contexts in the test function so they are not dropped before the test finishes
+        let gh_ctx = MockGithubClient::new_context();
+        let file_loader_ctx = MockFileLoader::new_context();
+        setup_client_and_loader_mocks(&mut seq, &gh_ctx, &file_loader_ctx, false, None, None);
+
+        load(&mut io, false).await
+    }
+
+    #[tokio::test]
+    async fn test_config_is_built_from_user_input_if_settings_file_does_not_exist() -> Result<()> {
+        let mut seq = Sequence::new();
+
+        let mut io = MockInteractiveIO::default();
+        setup_interactive_io_mock(&mut io, &mut seq);
+
+        let ctx = MockConfig::from_interactive_io_context();
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config.expect_gist_id().return_const(String::default());
+                mock_config
+                    .expect_github_token()
+                    .return_const(String::default());
+                Ok(mock_config)
+            });
+
+        // we need to create contexts in the test function so they are not dropped before the test finishes
+        let gh_ctx = MockGithubClient::new_context();
+        let file_loader_ctx = MockFileLoader::new_context();
+        setup_client_and_loader_mocks(&mut seq, &gh_ctx, &file_loader_ctx, false, None, None);
+
+        load(&mut io, false).await
+    }
+
+    #[tokio::test]
+    async fn test_force_is_passed_to_file_loader() -> Result<()> {
+        let mut seq = Sequence::new();
+
+        let mut io = MockInteractiveIO::default();
+        setup_interactive_io_mock(&mut io, &mut seq);
+
+        let ctx = MockConfig::from_interactive_io_context();
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config.expect_gist_id().return_const(String::default());
+                mock_config
+                    .expect_github_token()
+                    .return_const(String::default());
+                Ok(mock_config)
+            });
+
+        // we need to create contexts in the test function so they are not dropped before the test finishes
+        let gh_ctx = MockGithubClient::new_context();
+        let file_loader_ctx = MockFileLoader::new_context();
+        setup_client_and_loader_mocks(&mut seq, &gh_ctx, &file_loader_ctx, true, None, None);
+
+        load(&mut io, true).await
+    }
+
+    #[tokio::test]
+    async fn test_params_from_config_are_passed_to_github_client() -> Result<()> {
+        let gist_id = "1234567890";
+        let github_token = "abcdefg";
+
+        let mut seq = Sequence::new();
+
+        let mut io = MockInteractiveIO::default();
+        setup_interactive_io_mock(&mut io, &mut seq);
+
+        let ctx = MockConfig::from_interactive_io_context();
+        ctx.expect()
+            .in_sequence(&mut seq)
+            .returning(|_io: &mut MockInteractiveIO| {
+                let mut mock_config = MockConfig::default();
+                mock_config
+                    .expect_gist_id()
+                    .return_const(gist_id.to_string());
+                mock_config
+                    .expect_github_token()
+                    .return_const(github_token.to_string());
+                Ok(mock_config)
+            });
+
+        // we need to create contexts in the test function so they are not dropped before the test finishes
+        let gh_ctx = MockGithubClient::new_context();
+        let file_loader_ctx = MockFileLoader::new_context();
+        setup_client_and_loader_mocks(
+            &mut seq,
+            &gh_ctx,
+            &file_loader_ctx,
+            false,
+            Some(gist_id.to_string()),
+            Some(github_token.to_string()),
+        );
+
+        load(&mut io, false).await
+    }
 }

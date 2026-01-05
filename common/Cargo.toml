@@ -13,6 +13,10 @@ octocrab = { workspace = true }
 serde = { workspace = true }
 zed_extension_api = { workspace = true }
 paths = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
-assert_fs = "1.1.3"
+tracing = { workspace = true }
+mockall = { workspace = true }
+assert_fs = { workspace = true }
 rpassword = "7.4.0"
+async-trait = "0.1.89"

@@ -1,5 +1,7 @@
 words = [
+    "dyn",
     "gho",
+    "mockall",
     "nextest",
     "octocrab",
     "unwatch",

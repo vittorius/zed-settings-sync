@@ -13,10 +13,10 @@ octocrab = { workspace = true }
 zed_extension_api = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true, features = ["io-std"] }
+tracing = { workspace = true }
 paths = { workspace = true }
 common = { path = "../common" }
 debug-ignore = "1.0.5"
 notify = "8.2.0"
 tower-lsp = "0.20.0" # TODO: upgrade
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "chrono"] }

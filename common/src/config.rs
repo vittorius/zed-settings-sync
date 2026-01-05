@@ -1,14 +1,15 @@
-use std::{
-    fs,
-    io::{BufRead, Write},
-};
+use std::fs;
 
+use crate::interactive_io::InteractiveIO;
+#[cfg(test)]
+use crate::test_support::CursorInteractiveIO;
 #[cfg(test)]
 use crate::test_support::read_password;
 #[cfg(test)]
 use crate::test_support::zed_paths;
 use anyhow::{Result, anyhow, bail};
 use jsonc_parser::{ParseOptions, parse_to_serde_value};
+use mockall::automock;
 #[cfg(not(test))]
 use paths as zed_paths;
 #[cfg(not(test))]
@@ -18,14 +19,25 @@ use zed_extension_api::serde_json::from_value;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub gist_id: String,
-    pub github_token: String,
+    gist_id: String,
+    github_token: String,
 }
 
 #[allow(clippy::missing_errors_doc)]
 #[allow(clippy::missing_panics_doc)]
+#[automock]
 impl Config {
-    pub fn from_file() -> Result<Self> {
+    #[must_use]
+    pub fn gist_id(&self) -> &str {
+        &self.gist_id
+    }
+
+    #[must_use]
+    pub fn github_token(&self) -> &str {
+        &self.github_token
+    }
+
+    pub fn from_settings_file() -> Result<Self> {
         // we don't care about possible TOCTOU errors because if Zed is installed, its config key is guaranteed to exist
         if !zed_paths::settings_file().try_exists()? {
             bail!(
@@ -48,24 +60,24 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_interactive_io(input: &mut impl BufRead, output: &mut impl Write) -> Result<Self> {
-        writeln!(output, "Enter your Github token:")?;
+    pub fn from_interactive_io<T: InteractiveIO + 'static>(io: &mut T) -> Result<Self> {
+        io.write_line("Enter your Github token:")?;
         let mut github_token: String;
 
         github_token = read_password()?;
         while github_token.is_empty() {
-            writeln!(output, "Github token cannot be empty")?;
+            io.write_line("Github token cannot be empty")?;
             github_token = read_password()?;
         }
 
-        writeln!(output, "Enter your Gist ID:")?;
+        io.write_line("Enter your Gist ID:")?;
         let mut gist_id = String::default();
-        input.read_line(&mut gist_id)?;
+        io.read_line(&mut gist_id)?;
         gist_id = gist_id.trim_end().to_owned();
 
         while gist_id.is_empty() {
-            writeln!(output, "Gist ID cannot be empty")?;
-            input.read_line(&mut gist_id)?;
+            io.write_line("Gist ID cannot be empty")?;
+            io.read_line(&mut gist_id)?;
             gist_id = gist_id.trim_end().to_owned();
         }
 
@@ -83,17 +95,15 @@ impl Config {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
-    use std::io::{Cursor, Seek};
-
     use assert_fs::prelude::*;
 
-    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_config_file};
+    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_settings_file};
 
     use super::*;
 
     #[tokio::test]
     async fn test_from_file_successfully_reads_correct_config_structure() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
                 "lsp": {
@@ -108,7 +118,7 @@ mod tests {
             "#,
         )?;
 
-        let config = Config::from_file().expect("Failed to read config from file");
+        let config = Config::from_settings_file().expect("Failed to read config from file");
 
         assert_eq!(config.github_token, "your_github_token");
         assert_eq!(config.gist_id, "your_gist_id");
@@ -118,7 +128,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_settings_file_is_missing() {
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -131,9 +141,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_settings_file_is_empty() -> Result<()> {
-        zed_config_file().touch()?;
+        zed_settings_file().touch()?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(config.unwrap_err().to_string(), "Settings file is empty");
 
@@ -142,9 +152,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_key() -> Result<()> {
-        zed_config_file().write_str("{}")?;
+        zed_settings_file().write_str("{}")?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -156,9 +166,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_key() -> Result<()> {
-        zed_config_file().write_str(r#"{"lsp": {}}"#)?;
+        zed_settings_file().write_str(r#"{"lsp": {}}"#)?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -171,7 +181,7 @@ mod tests {
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_lsp_settings_sync_initialization_options_key()
     -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {
@@ -180,7 +190,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -192,7 +202,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_gist_id_key() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {
@@ -203,7 +213,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(config.unwrap_err().to_string(), "missing field `gist_id`");
 
@@ -212,7 +222,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_from_file_fails_when_config_is_missing_github_token_key() -> Result<()> {
-        zed_config_file().write_str(
+        zed_settings_file().write_str(
             r#"
             {
               "lsp": {
@@ -225,7 +235,7 @@ mod tests {
             }"#,
         )?;
 
-        let config = Config::from_file();
+        let config = Config::from_settings_file();
 
         assert_eq!(
             config.unwrap_err().to_string(),
@@ -238,13 +248,12 @@ mod tests {
     #[tokio::test]
     async fn test_from_user_input_successfully_reads_config() -> Result<()> {
         let input_lines = "\nabcdef1234567890\n"; // empty line followed by fake gist id
-        let mut input = Cursor::new(input_lines);
-        let mut output: Cursor<Vec<u8>> = Cursor::new(vec![]);
+        let mut io = CursorInteractiveIO::new(input_lines);
 
-        let config = Config::from_interactive_io(&mut input, &mut output)?;
-        output.rewind()?;
+        let config = Config::from_interactive_io(&mut io)?;
 
-        let mut output_lines_iter = output.lines();
+        io.rewind_output()?;
+        let mut output_lines_iter = io.output_lines();
 
         assert_eq!(
             output_lines_iter.next().unwrap()?,
