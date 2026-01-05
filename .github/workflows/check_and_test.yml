@@ -31,12 +31,13 @@ jobs:
 
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
-            bootstrap: |
-              sudo apt-get update
-              sudo apt-get -y install podman
-              cargo install cross
-              cargo clean
-            binary: cross
+            # bootstrap: |
+            #   sudo apt-get update
+            #   sudo apt-get -y install podman
+            #   cargo install cross
+            #   cargo clean
+            # binary: cross
+            binary: cargo
 
           - target: x86_64-apple-darwin
             runner: macos-latest
