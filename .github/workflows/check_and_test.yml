@@ -2,6 +2,7 @@ name: Check and Test
 on:
   push:
   pull_request:
+    types: [opened]
 
 jobs:
   check:
