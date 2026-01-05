@@ -76,6 +76,9 @@ impl Config {
     }
 }
 
+// NOTE: these tests don't use any cross-thread sync for operations on shared FS paths
+// so they must be run sequentially or in parallel processes
+// e.g. using cargo nextest or serial-test crate in case of cargo test
 #[allow(clippy::expect_used)]
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]

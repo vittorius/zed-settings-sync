@@ -202,6 +202,7 @@ This is because of the limited functionality of Zed extensions in general. But, 
 
 ## Development
 
+- Use [Nextest](https://nexte.st/) test runner ([some tests](common/src/config.rs) rely on it to be run without the need of cross-thread synchronization)
 - TODO: install rust and other components via rustup
 - TODO: install iprecommit (install uv, do uv venv, do ux pip install iprecommit)
 - TODO: other necessary setup

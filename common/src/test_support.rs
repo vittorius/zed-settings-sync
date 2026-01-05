@@ -1,6 +1,7 @@
 // TODO: consider extracting this module into a separate local crate
 
 #![allow(clippy::pedantic)]
+#![allow(clippy::expect_used)]
 
 use assert_fs::{TempDir, fixture::ChildPath, prelude::PathChild};
 use std::{
@@ -8,7 +9,6 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
-#[allow(clippy::expect_used)]
 static ZED_CONFIG_DIR: LazyLock<TempDir> =
     LazyLock::new(|| TempDir::new().expect("Failed to create temporary Zed config directory"));
 static READ_PASSWORD_INPUTS_REVERSED: LazyLock<Mutex<Vec<String>>> =
@@ -28,7 +28,6 @@ pub fn zed_config_file() -> ChildPath {
 // must be called from a single test function,
 // the number of calls is limited to the number of passwords in the input vector
 pub fn read_password() -> io::Result<String> {
-    #[allow(clippy::expect_used)]
     Ok(READ_PASSWORD_INPUTS_REVERSED
         .lock()
         .expect("Failed to lock password inputs")
