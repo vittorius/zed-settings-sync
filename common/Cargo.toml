@@ -20,3 +20,4 @@ mockall = { workspace = true }
 assert_fs = { workspace = true }
 rpassword = "7.4.0"
 async-trait = "0.1.89"
+ctor = { workspace = true }

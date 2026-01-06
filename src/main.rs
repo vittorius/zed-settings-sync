@@ -9,7 +9,7 @@ use common::interactive_io::InteractiveIO;
 #[double]
 use common::sync::GithubClient;
 #[cfg(test)]
-use common::test_support::zed_paths;
+use common::{nextest_only, test_support::zed_paths};
 use mockall_double::double;
 #[cfg(not(test))]
 use paths as zed_paths;
@@ -64,6 +64,9 @@ async fn load<T: InteractiveIO + 'static>(io: &mut T, force: bool) -> Result<()>
 
     loader.load_files().await
 }
+
+#[cfg(test)]
+nextest_only!();
 
 #[cfg(test)]
 mod tests {

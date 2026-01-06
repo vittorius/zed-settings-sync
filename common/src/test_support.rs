@@ -88,3 +88,17 @@ pub mod zed_paths {
         ZED_CONFIG_DIR.path().to_owned()
     }
 }
+
+#[macro_export]
+macro_rules! nextest_only {
+    () => {
+        #[ctor::ctor]
+        fn check_nextest() {
+            if std::env::var("NEXTEST").is_err() {
+                eprintln!("ERROR: These tests are designed for Nextest runner");
+                eprintln!("Run with: cargo nextest run");
+                std::process::exit(1);
+            }
+        }
+    };
+}

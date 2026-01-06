@@ -15,3 +15,6 @@ static ZED_CONFIG_FILE_NAME: LazyLock<&str> = LazyLock::new(|| {
         .to_str()
         .expect(r#"Non UTF-8 settings file name from Zed from Zed "paths" crate"#)
 });
+
+#[cfg(test)]
+nextest_only!();

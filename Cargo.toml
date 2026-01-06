@@ -17,6 +17,7 @@ tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
 mockall = { version = "0.14.0" }
 assert_fs = "1.1.3"
+ctor = { version = "0.6.3", default-features = false, features = ["proc_macro"] }
 paths = { git = "https://github.com/zed-industries/zed.git" }
 
 [dependencies]
@@ -31,6 +32,9 @@ mockall = { workspace = true }
 common = { path = "./common" }
 clap = { version = "4.5.53", features = ["derive"] }
 mockall_double = "0.3.1"
+
+[dev-dependencies]
+ctor = { workspace = true }
 
 [lib]
 crate-type = ["cdylib"]
