@@ -1,8 +1,10 @@
 name: Check and Test
 on:
-  push:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize, reopened] # on every push to a PR
+  push:
+    branches:
+      - main # after the PR is merged
 
 jobs:
   check:
