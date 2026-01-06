@@ -4,7 +4,6 @@ use anyhow::Result;
 #[cfg(test)]
 use common::test_support::zed_paths;
 use common::{interactive_io::InteractiveIO, sync::Client};
-use mockall::mock;
 #[cfg(not(test))]
 use paths as zed_paths;
 
@@ -56,7 +55,8 @@ impl<'a> FileLoader<'a> {
     }
 }
 
-mock! {
+#[cfg(test)]
+mockall::mock! {
     pub FileLoader {
         pub fn new<'a>(client: &'a dyn Client, io: &'a mut dyn InteractiveIO, force: bool) -> Self;
         pub async fn load_files(&mut self) -> Result<()>;
