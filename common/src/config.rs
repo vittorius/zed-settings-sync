@@ -1,21 +1,19 @@
 use std::fs;
 
-use crate::interactive_io::InteractiveIO;
-#[cfg(test)]
-use crate::test_support::CursorInteractiveIO;
-#[cfg(test)]
-use crate::test_support::read_password;
-#[cfg(test)]
-use crate::test_support::zed_paths;
 use anyhow::{Result, anyhow, bail};
 use jsonc_parser::{ParseOptions, parse_to_serde_value};
-use mockall::automock;
 #[cfg(not(test))]
 use paths as zed_paths;
 #[cfg(not(test))]
 use rpassword::read_password;
 use serde::Deserialize;
+#[cfg(test)]
+use test_support::read_password;
+#[cfg(test)]
+use test_support::zed_paths;
 use zed_extension_api::serde_json::from_value;
+
+use crate::interactive_io::InteractiveIO;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -25,7 +23,7 @@ pub struct Config {
 
 #[allow(clippy::missing_errors_doc)]
 #[allow(clippy::missing_panics_doc)]
-#[automock]
+#[cfg_attr(feature = "test-support", mockall::automock)]
 impl Config {
     #[must_use]
     pub fn gist_id(&self) -> &str {
@@ -95,11 +93,50 @@ impl Config {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
-    use assert_fs::prelude::*;
+    use std::io::{self, BufRead, Cursor, Seek, Write};
 
-    use crate::test_support::{FAKE_GITHUB_TOKEN, zed_settings_file};
+    use assert_fs::prelude::*;
+    use test_support::{FAKE_GITHUB_TOKEN, zed_settings_file};
 
     use super::*;
+
+    pub struct CursorInteractiveIO<'a> {
+        input: Cursor<&'a str>,
+        output: Cursor<Vec<u8>>,
+    }
+
+    impl<'a> CursorInteractiveIO<'a> {
+        pub fn new(input: &'a str) -> Self {
+            Self {
+                input: Cursor::new(input),
+                output: Cursor::new(Vec::new()),
+            }
+        }
+
+        pub fn rewind_output(&mut self) -> io::Result<()> {
+            self.output.rewind()
+        }
+
+        pub fn output_lines(self) -> impl Iterator<Item = Result<String, io::Error>> {
+            self.output.lines()
+        }
+    }
+
+    impl InteractiveIO for CursorInteractiveIO<'_> {
+        fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
+            self.input.read_line(buf)
+        }
+
+        fn write_line(&mut self, line: &str) -> io::Result<()> {
+            self.output.write_all(line.as_bytes())?;
+            self.output.write_all(b"\n")?;
+            Ok(())
+        }
+
+        fn write(&mut self, text: &str) -> io::Result<()> {
+            self.output.write_all(text.as_bytes())
+        }
+    }
 
     #[tokio::test]
     async fn test_from_file_successfully_reads_correct_config_structure() -> Result<()> {

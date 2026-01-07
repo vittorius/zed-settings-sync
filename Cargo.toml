@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["common", "lsp", "xtask-lsp-install"]
+members = ["common", "lsp", "xtask-lsp-install", "test_support"]
 
 [workspace.dependencies]
 anyhow = "1.0.100"
@@ -35,6 +35,8 @@ mockall_double = "0.3.1"
 assert_fs = { workspace = true }
 ctor = { workspace = true }
 mockall = { workspace = true }
+common = { path = "./common", features = ["test-support"] }
+test_support = { path = "./test_support" }
 
 [lib]
 crate-type = ["cdylib"]

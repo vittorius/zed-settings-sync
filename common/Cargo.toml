@@ -3,6 +3,9 @@ name = "common"
 version = "0.0.1-alpha.1"
 edition = "2024"
 
+[features]
+test-support = ["dep:mockall"] # for mockall::automock
+
 [lints]
 workspace = true
 
@@ -16,8 +19,11 @@ paths = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+mockall = { workspace = true, optional = true }
 rpassword = "7.4.0"
 async-trait = "0.1.89"
-assert_fs = { workspace = true } # cannot be dev dependency: used by test_support module
-ctor = { workspace = true } # cannot be dev dependency: used by test_support module
-mockall = { workspace = true } # cannot be dev dependency: used by test_support module
+
+[dev-dependencies]
+test_support = { path = "../test_support" }
+assert_fs = { workspace = true }
+ctor = { workspace = true }

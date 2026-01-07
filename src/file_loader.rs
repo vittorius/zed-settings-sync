@@ -1,11 +1,11 @@
 use std::fs;
 
 use anyhow::Result;
-#[cfg(test)]
-use common::test_support::zed_paths;
 use common::{interactive_io::InteractiveIO, sync::Client};
 #[cfg(not(test))]
 use paths as zed_paths;
+#[cfg(test)]
+use test_support::zed_paths;
 
 pub struct FileLoader<'a> {
     client: &'a dyn Client,

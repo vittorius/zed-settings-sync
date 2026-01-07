@@ -1,13 +1,14 @@
-use paths as zed_paths;
 use std::sync::LazyLock;
+
+use paths as zed_paths;
 
 pub mod config;
 pub mod interactive_io;
 pub mod sync;
-pub mod test_support;
 
 static ZED_CONFIG_FILE_NAME: LazyLock<&str> = LazyLock::new(|| {
-    // currently, it's "settings.json" at won't likely change to some gibberish, so all "expect" calls below are safe
+    // currently, it's "settings.json" at won't likely change to some gibberish,
+    // so all "expect" calls below are safe
     #[allow(clippy::expect_used)]
     zed_paths::settings_file()
         .file_name()
@@ -17,4 +18,4 @@ static ZED_CONFIG_FILE_NAME: LazyLock<&str> = LazyLock::new(|| {
 });
 
 #[cfg(test)]
-nextest_only!();
+test_support::nextest_only!();
