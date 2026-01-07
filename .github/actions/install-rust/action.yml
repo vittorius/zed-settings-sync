@@ -11,7 +11,7 @@ runs:
   using: composite
   steps:
     - name: install rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@nightly
       with:
         components: rustfmt, clippy
         targets: ${{ inputs.targets }}
