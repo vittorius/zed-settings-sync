@@ -1,8 +1,8 @@
-use debug_ignore::DebugIgnore;
-use notify::Watcher;
 use std::{path::Path, pin::Pin, sync::Mutex};
 
 use anyhow::{Result, anyhow};
+use debug_ignore::DebugIgnore;
+use notify::Watcher;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Result as NotifyResult};
 use tokio::{
     sync::mpsc::{Receiver, channel},

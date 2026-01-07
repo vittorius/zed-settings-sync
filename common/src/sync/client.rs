@@ -1,10 +1,11 @@
 use std::fmt::Debug;
 
-use crate::sync::{Error, LocalFileData};
 use anyhow::Result;
 use async_trait::async_trait;
 pub use github_client::*;
 use thiserror::Error;
+
+use crate::sync::{Error, LocalFileData};
 
 mod github_client;
 

@@ -1,4 +1,3 @@
-use paths as zed_paths;
 use std::{
     env,
     error::Error,
@@ -6,6 +5,8 @@ use std::{
     path::Path,
     process::{Command, exit},
 };
+
+use paths as zed_paths;
 
 // TODO: extract to a shared local "paths" crate
 const EXTENSION_ID: &str = "settings-sync";

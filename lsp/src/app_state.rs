@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use common::sync::GithubClient;
-use std::sync::Arc;
 
 use crate::watching::Store;
 
