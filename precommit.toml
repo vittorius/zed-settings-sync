@@ -32,10 +32,10 @@ cmd = ["iprecommit-no-forbidden-strings", "--paths"]
 # pass_files = false
 
 [[pre_commit]]
-name = "CargoFmt"
-cmd = ["cargo", "fmt", "--all", "--", "--check"]
-pass_files = false
-fix_cmd = ["cargo", "fmt", "--all"]
+name = "RustFmt"
+cmd = ["rustfmt", "--check"]
+fix_cmd = ["rustfmt"]
+filters = ["*.rs"]
 
 [[pre_commit]]
 name = "CargoClippy"
