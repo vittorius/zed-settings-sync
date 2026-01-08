@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["common", "lsp", "xtask-lsp-install"]
+members = ["common", "lsp", "xtask-lsp-install", "test_support"]
 
 [workspace.dependencies]
 anyhow = "1.0.100"
@@ -27,14 +27,16 @@ octocrab = { workspace = true }
 zed_extension_api = { workspace = true }
 tokio = { workspace = true }
 paths = { workspace = true }
-assert_fs = { workspace = true }
-mockall = { workspace = true }
 common = { path = "./common" }
 clap = { version = "4.5.53", features = ["derive"] }
 mockall_double = "0.3.1"
 
 [dev-dependencies]
+assert_fs = { workspace = true }
 ctor = { workspace = true }
+mockall = { workspace = true }
+common = { path = "./common", features = ["test-support"] }
+test_support = { path = "./test_support" }
 
 [lib]
 crate-type = ["cdylib"]

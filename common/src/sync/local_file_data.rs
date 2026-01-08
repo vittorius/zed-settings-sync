@@ -1,5 +1,6 @@
-use anyhow::{Result, anyhow};
 use std::path::PathBuf;
+
+use anyhow::{Result, anyhow};
 
 pub struct LocalFileData {
     pub path: PathBuf,

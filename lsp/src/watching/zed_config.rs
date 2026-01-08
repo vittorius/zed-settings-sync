@@ -1,9 +1,10 @@
-use anyhow::Result;
-use paths as zed_paths;
 use std::{
     fmt::{self, Display},
     path::{Path, PathBuf},
 };
+
+use anyhow::Result;
+use paths as zed_paths;
 use tower_lsp::lsp_types::Url;
 
 #[derive(Debug, PartialEq, Eq, Hash)]

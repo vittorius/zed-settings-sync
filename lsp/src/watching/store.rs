@@ -1,11 +1,13 @@
-use crate::watching::{EventHandler, PathWatcher};
+use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
+
 use anyhow::Result;
 use anyhow::{Context, anyhow, bail};
 use common::sync::{Client, LocalFileData};
 use notify::{Event, EventKind, event::ModifyKind};
-use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::{debug, error};
+
+use crate::watching::{EventHandler, PathWatcher};
 
 #[derive(Debug)]
 struct WatchedSet {

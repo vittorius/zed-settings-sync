@@ -1,16 +1,16 @@
 use std::collections::{BTreeMap, btree_map::IntoIter};
 
+use anyhow::{Context, Result};
+use async_trait::async_trait;
+use jsonc_parser::{ParseOptions, cst::CstRootNode};
+use octocrab::models::gists::GistFile;
+use paths as zed_paths;
+use tracing::{info, instrument};
+
 use crate::{
     ZED_CONFIG_FILE_NAME,
     sync::{Client, Error, FileError, FileResult, LocalFileData},
 };
-use anyhow::{Context, Result};
-use async_trait::async_trait;
-use jsonc_parser::{ParseOptions, cst::CstRootNode};
-use mockall::mock;
-use octocrab::models::gists::GistFile;
-use paths as zed_paths;
-use tracing::{info, instrument};
 
 #[derive(Debug)]
 pub struct GithubClient {
@@ -168,7 +168,8 @@ fn set_github_token_config_value(root: &CstRootNode, value: String) -> Result<()
 }
 
 // currently, GithubClient is the only implementation of Client, so mocking it directly
-mock! {
+#[cfg(feature = "test-support")]
+mockall::mock! {
     pub GithubClient {
         pub fn id(&self) -> String; // for identity tracking in tests
         pub fn new(gist_id: String, github_token: String) -> Result<Self>;

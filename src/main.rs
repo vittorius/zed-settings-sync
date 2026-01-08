@@ -1,6 +1,3 @@
-#[double]
-use crate::file_loader::FileLoader;
-use crate::std_interactive_io::StdInteractiveIO;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 #[double]
@@ -8,11 +5,15 @@ use common::config::Config;
 use common::interactive_io::InteractiveIO;
 #[double]
 use common::sync::GithubClient;
-#[cfg(test)]
-use common::{nextest_only, test_support::zed_paths};
 use mockall_double::double;
 #[cfg(not(test))]
 use paths as zed_paths;
+#[cfg(test)]
+use test_support::{nextest_only, zed_paths};
+
+#[double]
+use crate::file_loader::FileLoader;
+use crate::std_interactive_io::StdInteractiveIO;
 
 mod file_loader;
 mod std_interactive_io;
@@ -70,9 +71,6 @@ nextest_only!();
 
 #[cfg(test)]
 mod tests {
-    use crate::file_loader::{
-        __mock_MockFileLoader::__new::Context as MockFileLoaderNewContext, MockFileLoader,
-    };
     use anyhow::Result;
     use assert_fs::prelude::*;
     use common::{
@@ -82,11 +80,14 @@ mod tests {
             __mock_MockGithubClient::__new::Context as MockGithubClientNewContext, Client,
             MockGithubClient,
         },
-        test_support::zed_settings_file,
     };
     use mockall::{Sequence, predicate};
+    use test_support::zed_settings_file;
 
     use super::*;
+    use crate::file_loader::{
+        __mock_MockFileLoader::__new::Context as MockFileLoaderNewContext, MockFileLoader,
+    };
 
     fn setup_interactive_io_mock(io: &mut MockInteractiveIO, seq: &mut Sequence) {
         io.expect_write_line()

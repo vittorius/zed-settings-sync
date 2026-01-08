@@ -1,0 +1,15 @@
+[package]
+name = "test_support"
+version = "0.0.1-alpha.1"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[dependencies]
+common = { path = "../common" }
+paths = { workspace = true }
+# test crates go to [dependencies] because this entire crate is used in "test" context only
+assert_fs = { workspace = true }
+mockall = { workspace = true }
+ctor = { workspace = true }

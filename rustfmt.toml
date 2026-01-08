@@ -1,1 +1,4 @@
 edition = "2024"
+
+group_imports = "StdExternalCrate" # Group imports by category and separate with blank lines
+reorder_imports = true # Sort imports within each group
