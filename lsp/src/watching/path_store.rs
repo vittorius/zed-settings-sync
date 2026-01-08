@@ -118,6 +118,15 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
 
 #[cfg(test)]
 mod tests {
+    use common::sync::MockGithubClient;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_successful_creation() {
+        assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_ok());
+    }
+
     /*
     - new
       - test successful creation
