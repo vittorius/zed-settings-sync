@@ -27,12 +27,12 @@ impl WatchedSet {
 }
 
 #[derive(Debug)]
-pub struct Store {
+pub struct PathStore {
     // behind mutex to control the simultaneous change of paths set and path watcher
     watched_set: Mutex<WatchedSet>,
 }
 
-impl Store {
+impl PathStore {
     pub fn new(client: Arc<dyn Client>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
             let client_clone = Arc::clone(&client);
@@ -56,6 +56,14 @@ impl Store {
             watched_set: Mutex::new(WatchedSet::new(event_handler)?),
         })
     }
+
+    pub async fn start_watcher(&self) {
+        let mut watched_set = self.watched_set.lock().await;
+
+        watched_set.watcher.start();
+    }
+
+    // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 
     pub async fn watch(&self, file_path: PathBuf) -> anyhow::Result<()> {
         {
@@ -89,14 +97,6 @@ impl Store {
 
         Ok(())
     }
-
-    pub async fn start_watcher(&self) {
-        let mut watched_set = self.watched_set.lock().await;
-
-        watched_set.watcher.start();
-    }
-
-    // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 }
 
 fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
