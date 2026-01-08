@@ -115,3 +115,56 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
 
     Ok(Some(LocalFileData::new(path, body)?))
 }
+
+#[cfg(test)]
+mod tests {
+    /*
+    - new
+      - test successful creation
+        - create a store with the MockGithubClient passed
+      - test unsuccessful creation is watched set creation failed
+
+    - start watcher
+      - test successful start watcher
+        - watcher started (mock for PathWatcher)
+
+    - watch
+      - test successful watch new path
+        - new path passed to path watcher for watch (mock for PathWatcher)
+        - new path added to watched set (mock for WatchedSet)
+      - test failure watch path already watched
+
+    - unwatch
+        - test successful unwatch
+        - test failure unwatch path not watched
+          - path passed to path watcher for unwatch (mock for PathWatcher)
+          - path removed from watched set (mock for WatchedSet)
+
+    - events handling
+      - test create file does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), maybe with an already existing file
+        - create a new file in that dir
+        - ensure event was not triggered (MockGithubClient)
+      - test delete file does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), with an already existing file
+        - delete the file
+        - ensure event was not triggered (MockGithubClient)
+      - test modify file data triggers event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), with an already existing file
+        - modify the file data
+        - ensure event was triggered (MockGithubClient)
+      - test modify file data outside of watched paths does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir)
+        - create another assert_fs::TempDir with an existing file
+        - modify that file data
+        - ensure event was not triggered (MockGithubClient)
+        */
+}
