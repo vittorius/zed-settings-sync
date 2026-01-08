@@ -68,22 +68,220 @@ mod tests {
     #![allow(dead_code)]
 
     use anyhow::Result;
-    use common::sync::{Error, FileResult};
+    use assert_fs::prelude::*;
+    use common::{
+        interactive_io::MockInteractiveIO,
+        sync::{Error, FileError, MockGithubClient},
+    };
+    use mockall::{Sequence, predicate};
+    use test_support::zed_config_dir;
 
-    // TODO: use if applicable
-    fn empty_iter() -> Result<Box<dyn Iterator<Item = FileResult>>, Error> {
-        Ok(Box::new([].into_iter()))
-    }
+    use super::*;
 
+    #[tokio::test]
     async fn test_non_existing_file_is_written() -> Result<()> {
-        todo!()
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(|| {
+                Ok(Box::new(
+                    [Ok(("tasks.json".to_string(), "content".to_string()))].into_iter(),
+                ))
+            });
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("Written tasks.json"))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, false);
+        file_loader.load_files().await?;
+
+        zed_config_dir().child("tasks.json").assert("content");
+
+        Ok(())
     }
 
+    #[tokio::test]
     async fn test_existing_file_is_written_if_confirmed() -> Result<()> {
-        todo!()
+        zed_config_dir()
+            .child("settings.json")
+            .write_str("existing content")?;
+
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(|| {
+                Ok(Box::new(
+                    [Ok((
+                        "settings.json".to_string(),
+                        "{ \"key\": 1 }".to_string(),
+                    ))]
+                    .into_iter(),
+                ))
+            });
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("🟡 settings.json exists, overwrite (y/n)? "))
+            .returning(|_| Ok(()))
+            .once();
+        mock_io
+            .expect_read_line()
+            .in_sequence(&mut seq)
+            .once()
+            .returning(|answer| {
+                answer.push_str("YEZZZ\n");
+                Ok(6)
+            })
+            .once();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("Overwriting settings.json..."))
+            .returning(|_| Ok(()))
+            .once();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("Written settings.json"))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, false);
+        file_loader.load_files().await?;
+
+        zed_config_dir()
+            .child("settings.json")
+            .assert("{ \"key\": 1 }");
+
+        Ok(())
     }
 
-    async fn test_existing_file_is_written_if_not_confirmed() -> Result<()> {
-        todo!()
+    #[tokio::test]
+    async fn test_existing_file_is_not_written_if_not_confirmed() -> Result<()> {
+        zed_config_dir().child("keymap.json").write_str("{}")?;
+
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(|| {
+                Ok(Box::new(
+                    [Ok((
+                        "keymap.json".to_string(),
+                        "{ \"foo\": \"bar\" }".to_string(),
+                    ))]
+                    .into_iter(),
+                ))
+            });
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("🟡 keymap.json exists, overwrite (y/n)? "))
+            .returning(|_| Ok(()))
+            .once();
+        mock_io
+            .expect_read_line()
+            .in_sequence(&mut seq)
+            .once()
+            .returning(|answer| {
+                answer.push_str("NOOO\n");
+                Ok(5)
+            })
+            .once();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("Skipping keymap.json"))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, false);
+        file_loader.load_files().await?;
+
+        zed_config_dir().child("keymap.json").assert("{}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_existing_file_is_written_if_forced() -> Result<()> {
+        zed_config_dir()
+            .child("debug.json")
+            .write_str("existing content")?;
+
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(|| {
+                Ok(Box::new(
+                    [Ok(("debug.json".to_string(), "{ \"key\": 1 }".to_string()))].into_iter(),
+                ))
+            });
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq("Written debug.json"))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, true);
+        file_loader.load_files().await?;
+
+        zed_config_dir()
+            .child("debug.json")
+            .assert("{ \"key\": 1 }");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_error_reporting() -> Result<()> {
+        let mut seq = Sequence::new();
+
+        let mut mock_client = MockGithubClient::default();
+        let build_error = || {
+            FileError::from_error(
+                "tasks.json",
+                Error::UnhandledInternal("Unhandled internal error".to_string()),
+            )
+        };
+        mock_client
+            .expect_load_files()
+            .in_sequence(&mut seq)
+            .returning(move || Ok(Box::new([Err(build_error())].into_iter())))
+            .once();
+
+        let mut mock_io = MockInteractiveIO::default();
+        mock_io
+            .expect_write_line()
+            .in_sequence(&mut seq)
+            .with(predicate::eq(format!("🔴 {}", build_error())))
+            .returning(|_| Ok(()))
+            .once();
+
+        let mut file_loader = FileLoader::new(&mock_client, &mut mock_io, false);
+        file_loader.load_files().await
     }
 }
