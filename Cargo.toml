@@ -19,6 +19,7 @@ mockall = { version = "0.14.0" }
 assert_fs = "1.1.3"
 ctor = { version = "0.6.3", default-features = false, features = ["proc_macro"] }
 paths = { git = "https://github.com/zed-industries/zed.git" }
+mockall_double = "0.3.1"
 
 [dependencies]
 anyhow = { workspace = true }
@@ -29,7 +30,7 @@ tokio = { workspace = true }
 paths = { workspace = true }
 common = { path = "./common" }
 clap = { version = "4.5.53", features = ["derive"] }
-mockall_double = "0.3.1"
+mockall_double = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }
