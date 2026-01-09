@@ -12,22 +12,13 @@
     },
   },
   {
-    "label": "cargo nextest tests::$ZED_CUSTOM_RUST_TEST_NAME",
-    "command": "cargo nextest run tests::$ZED_CUSTOM_RUST_TEST_NAME",
-    "tags": ["rust-test"],
-    "env": {
-      // "NEXTEST_FAILURE_OUTPUT": "immediate",
-      // "NEXTEST_SUCCESS_OUTPUT": "immediate"
-    },
-  },
-  {
     "label": "cargo nextest $ZED_STEM (package: $ZED_CUSTOM_RUST_PACKAGE)",
     "command": "cargo nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_STEM::$ZED_SYMBOL",
     "tags": ["rust-mod-test"],
   },
   {
-    "label": "cargo nextest tests",
-    "command": "cargo nextest run tests",
+    "label": "cargo nextest tests (crate root)",
+    "command": "cargo nextest run -E 'test(/^tests/)'",
     "tags": ["rust-mod-test"],
   },
   {

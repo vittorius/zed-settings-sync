@@ -20,6 +20,7 @@ pub struct PathWatcher {
     event_handler: Option<DebugIgnore<EventHandler>>, // DebugIgnore because Fn traits can't implement Debug
 }
 
+// #[cfg_attr(test, mockall::automock)]
 impl PathWatcher {
     pub fn new(event_handler: EventHandler) -> Result<Self> {
         let (tx, rx) = channel(1);
