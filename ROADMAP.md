@@ -23,6 +23,7 @@
 - [ ] Create a true integration test when a server is spawned, it's fed with JSON-RPC messages, and Github API URL is mocked via env var to point to a local mock server as another process
 - [ ] After implementing naive changes persistence (sync files as FS events come), seek the ways to improve it (e.g. queuing events)
       – [ ] (experimental) Rewrite the LSP server to use structured async concurrency, thread-per-code async runtime, and get rid of Arc's around every data structure
+- [ ] Use type-state pattern to guarantee that one cannot watch/unwatch a path using non-started WatcherSet or PathStore
 
 ### CLI tool
 
