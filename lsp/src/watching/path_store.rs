@@ -1,35 +1,18 @@
-use std::{collections::HashSet, fs, path::PathBuf, pin::Pin, sync::Arc};
+use std::{fs, path::PathBuf, pin::Pin, sync::Arc};
 
 use anyhow::Result;
-use anyhow::{Context, anyhow, bail};
+use anyhow::{Context, anyhow};
 use common::sync::{Client, LocalFileData};
+use mockall_double::double;
 use notify::{Event, EventKind, event::ModifyKind};
-use tokio::sync::Mutex;
 use tracing::{debug, error};
 
-use crate::watching::{EventHandler, PathWatcher};
-
-#[derive(Debug)]
-struct WatchedSet {
-    paths: HashSet<PathBuf>,
-    watcher: PathWatcher,
-}
-
-impl WatchedSet {
-    fn new(event_handler: EventHandler) -> Result<Self> {
-        let watcher = PathWatcher::new(event_handler)?;
-
-        Ok(Self {
-            paths: HashSet::new(),
-            watcher,
-        })
-    }
-}
+#[double]
+use crate::watching::WatchedSet;
 
 #[derive(Debug)]
 pub struct PathStore {
-    // behind mutex to control the simultaneous change of paths set and path watcher
-    watched_set: Mutex<WatchedSet>,
+    watched_set: WatchedSet,
 }
 
 impl PathStore {
@@ -53,49 +36,22 @@ impl PathStore {
         });
 
         Ok(Self {
-            watched_set: Mutex::new(WatchedSet::new(event_handler)?),
+            watched_set: WatchedSet::new(event_handler)?,
         })
     }
 
-    pub async fn start_watcher(&self) {
-        let mut watched_set = self.watched_set.lock().await;
-
-        watched_set.watcher.start();
+    pub fn start_watcher(&mut self) {
+        self.watched_set.start_watcher();
     }
 
     // no need to stop watcher or clear the store because it will be stopped (when dropped) on the store drop
 
-    pub async fn watch(&self, file_path: PathBuf) -> anyhow::Result<()> {
-        {
-            let mut watched_set = self.watched_set.lock().await;
-
-            if watched_set.paths.contains(&file_path) {
-                bail!("Path is already being watched: {}", file_path.display());
-            }
-
-            watched_set.watcher.watch(&file_path)?;
-            watched_set.paths.insert(file_path);
-        }
-
-        Ok(())
+    pub fn watch(&mut self, file_path: PathBuf) -> anyhow::Result<()> {
+        self.watched_set.watch(file_path)
     }
 
-    pub async fn unwatch(&self, file_path: PathBuf) -> anyhow::Result<()> {
-        {
-            let mut watched_set = self.watched_set.lock().await;
-
-            if !watched_set.paths.contains(&file_path) {
-                bail!(
-                    "Path is not being watched, failed to unwatch: {}",
-                    file_path.display()
-                );
-            }
-
-            watched_set.watcher.unwatch(&file_path)?;
-            watched_set.paths.remove(&file_path);
-        }
-
-        Ok(())
+    pub fn unwatch(&mut self, file_path: &PathBuf) -> anyhow::Result<()> {
+        self.watched_set.unwatch(file_path)
     }
 }
 
