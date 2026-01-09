@@ -74,21 +74,68 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
 
 #[cfg(test)]
 mod tests {
+
+    use assert_fs::{TempDir, prelude::*};
     use common::sync::MockGithubClient;
+    use mockall::{Sequence, predicate};
 
     use super::*;
+    use crate::watching::MockWatchedSet;
 
     #[tokio::test]
     async fn test_successful_creation() {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(|_| Ok(MockWatchedSet::default()));
+
         assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_ok());
     }
 
-    /*
-    - new
-      - test successful creation
-        - create a store with the MockGithubClient passed
-      - test unsuccessful creation is watched set creation failed
+    #[tokio::test]
+    async fn test_unsuccessful_creation_when_watched_set_creation_failed() {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect()
+            .returning(|_| Err(anyhow!("Failed to create watched set"))); // FIXME: wrapping into Err should be unnecessary
 
+        assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_err());
+    }
+
+    // fn test_successful_start_watcher() {
+    //     let store = PathStore::new(Arc::new(MockGithubClient::default()));
+    // }
+
+    #[tokio::test]
+    async fn test_successful_watch_new_path() -> Result<()> {
+        let dir = TempDir::new()?;
+        dir.child("foobar").touch()?;
+        let path = dir.path().to_path_buf();
+        let path_clone = path.clone();
+
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |_| {
+            let mut seq = Sequence::new();
+            let mut mock_watched_set = MockWatchedSet::default();
+            mock_watched_set
+                .expect_start_watcher()
+                .in_sequence(&mut seq)
+                .returning(|| ());
+            mock_watched_set
+                .expect_watch()
+                .with(predicate::eq(path.clone()))
+                .in_sequence(&mut seq)
+                .returning(|_| Ok(()));
+
+            Ok(mock_watched_set)
+        });
+
+        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        store.start_watcher();
+        store.watch(path_clone)?;
+
+        Ok(())
+    }
+
+    /*
+    // TODO: postponed
     - start watcher
       - test successful start watcher
         - watcher started (mock for PathWatcher)
