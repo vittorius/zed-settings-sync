@@ -8,6 +8,9 @@ mod backend;
 mod logger;
 mod watching;
 
+#[cfg(test)]
+test_support::nextest_only!();
+
 #[tokio::main]
 async fn main() {
     logger::init_logger();

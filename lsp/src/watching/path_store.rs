@@ -74,36 +74,151 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use assert_fs::{TempDir, prelude::*};
     use common::sync::MockGithubClient;
+    use mockall::{Sequence, predicate};
+    use paste::paste;
 
     use super::*;
+    use crate::watching::MockWatchedSet;
 
     #[tokio::test]
     async fn test_successful_creation() {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(|_| Ok(MockWatchedSet::default()));
+
         assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_ok());
     }
 
+    #[tokio::test]
+    async fn test_unsuccessful_creation_when_watched_set_creation_failed() {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect()
+            .returning(|_| Err(anyhow!("Failed to create watched set")));
+
+        assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_err());
+    }
+
+    macro_rules! setup_watched_set_mock {
+        ($method:ident, $path:expr) => {
+            paste! {
+                let ctx = MockWatchedSet::new_context();
+                ctx.expect().returning(move |_| {
+                    let mut seq = Sequence::new();
+                    let mut mock_watched_set = MockWatchedSet::default();
+                    mock_watched_set
+                        .expect_start_watcher()
+                        .in_sequence(&mut seq)
+                        .returning(|| ());
+                    mock_watched_set
+                        .[<expect_ $method>]()
+                        .with(predicate::eq($path))
+                        .in_sequence(&mut seq)
+                        .returning(|_| Ok(()));
+
+                    Ok(mock_watched_set)
+                });
+            }
+        };
+        ($method:ident, $path:expr, $err_msg:expr) => {
+            paste! {
+                let ctx = MockWatchedSet::new_context();
+                ctx.expect().returning(move |_| {
+                    let mut seq = Sequence::new();
+                    let mut mock_watched_set = MockWatchedSet::default();
+                    mock_watched_set
+                        .expect_start_watcher()
+                        .in_sequence(&mut seq)
+                        .returning(|| ());
+                    mock_watched_set
+                        .[<expect_ $method>]()
+                        .with(predicate::eq($path))
+                        .in_sequence(&mut seq)
+                        .returning(|_| Err(anyhow!($err_msg)));
+
+                    Ok(mock_watched_set)
+                });
+            }
+        };
+    }
+
+    #[tokio::test]
+    async fn test_successful_watch_path() -> Result<()> {
+        let dir = TempDir::new()?;
+        dir.child("foobar").touch()?;
+        let path = dir.path().to_path_buf();
+        let path_clone = path.clone();
+
+        setup_watched_set_mock!(watch, path.clone());
+
+        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        store.start_watcher();
+        store.watch(path_clone)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_unsuccessful_watch_path() -> Result<()> {
+        let dir = TempDir::new()?;
+        dir.child("foobar").touch()?;
+        let path = dir.path().to_path_buf();
+        let path_clone = path.clone();
+
+        setup_watched_set_mock!(watch, path.clone(), "Path already being watched");
+
+        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        store.start_watcher();
+
+        assert_eq!(
+            store.watch(path_clone).unwrap_err().to_string(),
+            "Path already being watched"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_successful_unwatch_path() -> Result<()> {
+        let dir = TempDir::new()?;
+        dir.child("foobar").touch()?;
+        let path = dir.path().to_path_buf();
+        let path_clone = path.clone();
+
+        setup_watched_set_mock!(unwatch, path.clone());
+
+        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        store.start_watcher();
+        store.unwatch(&path_clone)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_unsuccessful_unwatch_path() -> Result<()> {
+        let dir = TempDir::new()?;
+        dir.child("foobar").touch()?;
+        let path = dir.path().to_path_buf();
+        let path_clone = path.clone();
+
+        setup_watched_set_mock!(unwatch, path.clone(), "Path was not watched");
+
+        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        store.start_watcher();
+
+        assert_eq!(
+            store.unwatch(&path_clone).unwrap_err().to_string(),
+            "Path was not watched"
+        );
+
+        Ok(())
+    }
+
     /*
-    - new
-      - test successful creation
-        - create a store with the MockGithubClient passed
-      - test unsuccessful creation is watched set creation failed
 
-    - start watcher
-      - test successful start watcher
-        - watcher started (mock for PathWatcher)
-
-    - watch
-      - test successful watch new path
-        - new path passed to path watcher for watch (mock for PathWatcher)
-        - new path added to watched set (mock for WatchedSet)
-      - test failure watch path already watched
-
-    - unwatch
-        - test successful unwatch
-        - test failure unwatch path not watched
-          - path passed to path watcher for unwatch (mock for PathWatcher)
-          - path removed from watched set (mock for WatchedSet)
+    Integration tests, here or just for WatchedSet (TODO)
 
     - events handling
       - test create file does not trigger event handler

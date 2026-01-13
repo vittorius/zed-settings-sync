@@ -25,3 +25,8 @@ mockall_double = { workspace = true }
 
 [dev-dependencies]
 common = { path = "../common", features = ["test-support"] }
+test_support = { path = "../test_support" }
+mockall = { workspace = true }
+assert_fs = { workspace = true }
+ctor = { workspace = true }
+paste = "1.0.15"
