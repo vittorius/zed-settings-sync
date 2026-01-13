@@ -4168,6 +4168,7 @@ dependencies = [
  "ctor",
  "debug-ignore",
  "jsonc-parser",
+ "mockall",
  "mockall_double",
  "notify",
  "octocrab",
