@@ -19,13 +19,15 @@
 - [ ] Add secrecy crate and use it for all usages of the Github token
 - [ ] To support multiple sync providers, implement a SyncClient trait and use it for all sync operations. Move it to the "common" crate.
 - [ ] Report a sync error in a visible way (crash the server? know how to report an LSP error inside Zed?)
+- [ ] Backup installed themes to the gist automatically
 
 ### CLI tool
 
 - [ ] Handle errors more beautifully, introduce the dedicated Error type if needed
 - [ ] Log output through tracing subscriber and/or add coloring of various levels of output messages
       – [ ] Add cross-platform colored plain chars for CLI output instead of colored circle emojis
-- [ ] Refactor to get rid of the InteractiveIO trait in favor of BufRead + Write type (trait), see https://t.me/rustlang_ua/69909/132141
+- [ ] Refactor to get rid of the InteractiveIO trait in favor of BufRead + Write type (trait), see <https://t.me/rustlang_ua/69909/132141>
+- [ ] Add an option to create a new gist on the fly, copy settings to it and start using it from now on
 
 ## CI
 
