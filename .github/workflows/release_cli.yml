@@ -1,12 +1,13 @@
-name: Release LSP server
+name: Release CLI tool
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "LSP server version"
+        description: "CLI tool version"
         required: true
+
 env:
-  PKG_NAME: zed-settings-sync-lsp
+  PKG_NAME: zed-settings-sync
 
 jobs:
   check:
@@ -73,8 +74,8 @@ jobs:
             BIN_SUFFIX=".exe"
           fi
 
-          BIN_OUTPUT="target/${{ matrix.target }}/release/${PKG_NAME${BIN_SUFFIX}"
-          ARCHIVE_NAME="${PKG_NAME-${{ matrix.target }}"
+          BIN_OUTPUT="target/${{ matrix.target }}/release/${PKG_NAME}${BIN_SUFFIX}"
+          ARCHIVE_NAME="${PKG_NAME}-${{ matrix.target }}"
 
           mkdir tmp/
           mkdir "tmp/${ARCHIVE_NAME}"
