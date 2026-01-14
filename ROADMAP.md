@@ -27,6 +27,7 @@
 - [ ] To support multiple sync providers, implement a SyncClient trait and use it for all sync operations. Move it to the "common" crate.
 - [ ] Report a sync error in a visible way (crash the server? know how to report an LSP error inside Zed?)
 - [ ] Backup installed themes to the gist automatically
+- [ ] Use type-state pattern to guarantee that one cannot watch/unwatch a path using non-started WatcherSet or PathStore
 
 ### CLI tool
 
