@@ -1,10 +1,13 @@
-name: Release
+name: Release CLI tool
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "LSP version"
+        description: "CLI tool version"
         required: true
+
+env:
+  PKG_NAME: zed-settings-sync
 
 jobs:
   check:
@@ -29,37 +32,23 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
-            archive: tar.gz
             bootstrap: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
-            binary: cargo
+
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
-            archive: tar.gz
-            bootstrap: |
-              sudo apt-get update
-              sudo apt-get -y install podman
-              cargo install cross
-              cargo clean
-            binary: cross
 
           - target: x86_64-apple-darwin
-            runner: macos-latest
-            archive: tar.gz
-            bootstrap: |
-              arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-              arch -x86_64 /usr/local/bin/brew install openssl@3
-              echo "OPENSSL_DIR=$(/usr/local/bin/brew --prefix openssl@3)" >> $GITHUB_ENV
-            binary: cargo
+            runner: macos-15-intel
+
           - target: aarch64-apple-darwin
             runner: macos-latest
-            archive: tar.gz
             bootstrap: echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
-            binary: cargo
 
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
-            archive: zip
-            binary: cargo
+
+          - target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -74,41 +63,35 @@ jobs:
         run: ${{ matrix.bootstrap }}
 
       - name: build binary
-        run: ${{ matrix.binary }} build -p zed-settings-sync-lsp --verbose --locked --release --target ${{ matrix.target }}
+        run: cargo build -p $PKG_NAME --verbose --locked --release --target ${{ matrix.target }}
 
       - name: prepare for upload
         shell: bash
         id: vars
         run: |
           BIN_SUFFIX=""
-          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+          if [[ "${{ matrix.runner }}" == "windows-latest" || "${{ matrix.runner }}" == "windows-11-arm" ]]; then
             BIN_SUFFIX=".exe"
           fi
 
-          BIN_OUTPUT="target/${{ matrix.target }}/release/zed-settings-sync-lsp${BIN_SUFFIX}"
-          ARCHIVE_NAME="zed-settings-sync-lsp-${{ matrix.target }}"
+          BIN_OUTPUT="target/${{ matrix.target }}/release/${PKG_NAME}${BIN_SUFFIX}"
+          ARCHIVE_NAME="${PKG_NAME}-${{ matrix.target }}"
 
           mkdir tmp/
           mkdir "tmp/${ARCHIVE_NAME}"
 
           mv "${BIN_OUTPUT}" "tmp/${ARCHIVE_NAME}"
-          cp LICENSE "tmp/${ARCHIVE_NAME}"
+          cp LICENSE.txt "tmp/${ARCHIVE_NAME}"
           cp lsp/README.md "tmp/${ARCHIVE_NAME}"
 
-          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+          if [[ "${{ matrix.runner }}" == "windows-latest" || "${{ matrix.runner }}" == "windows-11-arm" ]]; then
+            ARCHIVE_PATH="tmp/${ARCHIVE_NAME}.zip"
+            cd tmp
+            7z a "../${ARCHIVE_PATH}" "${ARCHIVE_NAME}"
+            cd ..
+          else
             ARCHIVE_PATH="tmp/${ARCHIVE_NAME}.tar.gz"
             tar -czvf "${ARCHIVE_PATH}" -C "tmp" "${ARCHIVE_NAME}"
-          else
-            ARCHIVE_PATH="tmp/${ARCHIVE_NAME}.zip"
-
-            cd tmp
-            if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-              7z a "../${ARCHIVE_PATH}" "${ARCHIVE_NAME}"
-            else
-              zip -r "../${ARCHIVE_PATH}" "/${ARCHIVE_NAME}"
-            fi
-
-            cd ..
           fi
 
           echo "archive_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
