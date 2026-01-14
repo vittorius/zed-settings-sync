@@ -63,6 +63,7 @@ jobs:
         run: ${{ matrix.bootstrap }}
 
       - name: build binary
+        shell: bash
         run: cargo build -p $PKG_NAME --verbose --locked --release --target ${{ matrix.target }}
 
       - name: prepare for upload
