@@ -6,10 +6,8 @@ use common::interactive_io::InteractiveIO;
 #[double]
 use common::sync::GithubClient;
 use mockall_double::double;
-#[cfg(not(test))]
-use paths as zed_paths;
 #[cfg(test)]
-use test_support::{nextest_only, zed_paths};
+use test_support::nextest_only;
 
 #[double]
 use crate::file_loader::FileLoader;
@@ -32,6 +30,8 @@ pub enum Command {
         /// Force overwriting local settings files even if they exist
         #[arg(short, long, default_value_t = false)]
         force: bool,
+        // TODO: add an option to create a new gist on the fly,
+        // copy settings to it and start using it from now on
     },
 }
 
@@ -52,13 +52,7 @@ async fn main() -> Result<()> {
 }
 
 async fn load<T: InteractiveIO + 'static>(io: &mut T, force: bool) -> Result<()> {
-    let config = if zed_paths::settings_file().exists() {
-        io.write_line("Loading settings from file")?;
-        Config::from_settings_file()?
-    } else {
-        io.write_line("Zed settings file not found, probably you haven't installed Zed yet?")?;
-        Config::from_interactive_io(io)?
-    };
+    let config = Config::from_interactive_io(io)?;
 
     let client = GithubClient::new(config.gist_id().into(), config.github_token().into())?;
     let mut loader = FileLoader::new(&client, io, force);
@@ -72,7 +66,6 @@ nextest_only!();
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use assert_fs::prelude::*;
     use common::{
         config::MockConfig,
         interactive_io::MockInteractiveIO,
@@ -82,7 +75,6 @@ mod tests {
         },
     };
     use mockall::{Sequence, predicate};
-    use test_support::zed_settings_file;
 
     use super::*;
     use crate::file_loader::{
@@ -139,36 +131,6 @@ mod tests {
                 mock_file_loader.expect_load_files().returning(|| Ok(()));
                 mock_file_loader
             });
-    }
-
-    #[tokio::test]
-    async fn test_config_is_built_from_settings_file_if_it_exists() -> Result<()> {
-        zed_settings_file().touch()?;
-
-        let mut seq = Sequence::new();
-
-        let mut io = MockInteractiveIO::default();
-        io.expect_write_line()
-            .in_sequence(&mut seq)
-            .returning(|_| Ok(()))
-            .with(predicate::eq("Loading settings from file"));
-
-        let ctx = MockConfig::from_settings_file_context();
-        ctx.expect().in_sequence(&mut seq).returning(|| {
-            let mut mock_config = MockConfig::default();
-            mock_config.expect_gist_id().return_const(String::default());
-            mock_config
-                .expect_github_token()
-                .return_const(String::default());
-            Ok(mock_config)
-        });
-
-        // we need to create contexts in the test function so they are not dropped before the test finishes
-        let gh_ctx = MockGithubClient::new_context();
-        let file_loader_ctx = MockFileLoader::new_context();
-        setup_client_and_loader_mocks(&mut seq, &gh_ctx, &file_loader_ctx, false, None, None);
-
-        load(&mut io, false).await
     }
 
     #[tokio::test]
