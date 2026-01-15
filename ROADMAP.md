@@ -35,6 +35,7 @@
 - [ ] Add matrix to compile for Windows on ARM64
 - [ ] Speed up the build if possible (caching, Docker images, etc.)
 - [ ] Extract "compile" as a separate local Github action
+- [ ] Optimize binaries size <https://github.com/johnthagen/min-sized-rust>
 
 ## Documentation
 
