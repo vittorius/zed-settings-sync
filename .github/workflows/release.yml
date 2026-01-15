@@ -1,21 +1,15 @@
+# TODO: next steps
+# - keep single release line, only for zed-settings-sync-lsp binary (because it's auto-downloaded by extension library crate)
+# - find out how to publish zed-settings-sync binary to be easily consumable
+
 name: Release
-run-name: Building release for ${{ inputs.package_name }}@${{ inputs.version }}
+run-name: Building release for ${{ inputs.version }}
 on:
   workflow_dispatch:
     inputs:
-      package_name:
-        description: "Package name (LSP server, CLI tool, etc. package)"
-        type: choice
-        options:
-          - zed-settings-sync
-          - zed-settings-sync-lsp
-        required: true
       version:
-        description: "Package version"
+        description: "Version (same for all binaries)"
         required: true
-
-env:
-  PKG_NAME: ${{ inputs.package_name }}
 
 jobs:
   check:
@@ -38,6 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        package_name:
+          - zed-settings-sync
+          - zed-settings-sync-lsp
         include:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
@@ -73,13 +70,25 @@ jobs:
         with:
           targets: "${{ matrix.target }}"
 
+      # - name: version check
+      #   uses: ./.github/actions/version-check
+      #   with:
+      #     package_name: ${{ matrix.package_name }}
+      #     version: ${{ inputs.version }}
+
+      - name: version check
+        shell: bash
+        run: |
+          echo "Checking version of ${{ matrix.package_name }} to be ${{ inputs.version }}..."
+          [[ $(cargo metadata --no-deps --format-version=1 | jq -r '.packages[] | select(.name == "${{ matrix.package_name }}") | .version' -j) = '${{ inputs.version }}' ]]
+
       - name: bootstrap
         if: ${{ matrix.bootstrap != '' }}
         run: ${{ matrix.bootstrap }}
 
       - name: build binary
         shell: bash
-        run: ${CARGO_BINARY:-cargo} build -p $PKG_NAME --verbose --locked --release --target ${{ matrix.target }}
+        run: ${CARGO_BINARY:-cargo} build -p ${{ matrix.package_name }} --verbose --locked --release --target ${{ matrix.target }}
 
       - name: prepare for upload
         shell: bash
@@ -90,15 +99,14 @@ jobs:
             BIN_SUFFIX=".exe"
           fi
 
-          BIN_OUTPUT="target/${{ matrix.target }}/release/${PKG_NAME}${BIN_SUFFIX}"
-          ARCHIVE_NAME="${PKG_NAME}-${{ matrix.target }}"
+          BIN_OUTPUT="target/${{ matrix.target }}/release/${{ matrix.package_name }}${BIN_SUFFIX}"
+          ARCHIVE_NAME="${{ matrix.package_name }}-${{ matrix.target }}"
 
           mkdir tmp/
           mkdir "tmp/${ARCHIVE_NAME}"
 
           mv "${BIN_OUTPUT}" "tmp/${ARCHIVE_NAME}"
           cp LICENSE.txt "tmp/${ARCHIVE_NAME}"
-          cp lsp/README.md "tmp/${ARCHIVE_NAME}"
 
           if [[ "${{ matrix.runner }}" == "windows-latest" || "${{ matrix.runner }}" == "windows-11-arm" ]]; then
             ARCHIVE_PATH="tmp/${ARCHIVE_NAME}.zip"
@@ -140,8 +148,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ inputs.package_name }}/v${{ inputs.version }}
-          name: ${{ inputs.package_name }}/v${{ inputs.version }}
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
           draft: true
           files: |
             artifacts/**/*
