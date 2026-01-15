@@ -44,7 +44,7 @@ Until then, you can use the [dev installation mode](#dev-extension-installation)
 Ensure you have your [Github token](docs/CREATE_GITHUB_TOKEN.md) and [Gist ID](docs/CREATE_SETTINGS_GIST.md) at hand.
 
 1. Install [eget](https://github.com/zyedidia/eget)
-2. Run `sudo eget vittorius/zed-settings-sync --to=<your local bin directory>`
+2. Run `eget vittorius/zed-settings-sync --to=~/.local/bin` (or any other destination directory you prefer)
 3. Pick the `zed-settings-sync-cli` binary in the choice provided by eget
 4. Run `zed-settings-sync-cli load` and follow the instructions
 
