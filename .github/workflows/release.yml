@@ -38,7 +38,7 @@ jobs:
                 "runner": "ubuntu-latest",
                 "bootstrap": "sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config"
               },
-  
+
               {
                 "target": "aarch64-unknown-linux-gnu",
                 "runner": "ubuntu-latest",
@@ -50,23 +50,23 @@ jobs:
                   echo "CARGO_BINARY=cross" >> $GITHUB_ENV
                   `
               },
-  
+
               {
                 "target": "x86_64-apple-darwin",
                 "runner": "macos-15-intel",
               },
-  
+
               {
                 "target": "aarch64-apple-darwin",
                 "runner": "macos-latest",
                 "bootstrap": "echo \"OPENSSL_DIR=$(brew --prefix openssl@3)\" >> $GITHUB_ENV"
               },
-  
+
               {
                 "target": "x86_64-pc-windows-msvc",
                 "runner": "windows-latest",
               },
-  
+
               {
                 "target": "aarch64-pc-windows-msvc",
                 "runner": "windows-11-arm",
@@ -81,12 +81,12 @@ jobs:
             );
 
   compile:
-    name: compile ${{ matrix.target }}
-    runs-on: ${{ matrix.runner  }}
+    name: compile ${{ matrix.package_name }} ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
     # needs: check
     needs: setup
     strategy:
-      fail-fast: false
+      fail-fast: true
       # matrix:
       #   package_name: ["zed-settings-sync", "zed-settings-sync-lsp"]
       #   include:
