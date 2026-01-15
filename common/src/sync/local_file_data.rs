@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::{Result, anyhow};
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct LocalFileData {
     pub path: PathBuf,
     pub filename: String,

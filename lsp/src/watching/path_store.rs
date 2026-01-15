@@ -2,12 +2,17 @@ use std::{path::PathBuf, pin::Pin, sync::Arc};
 
 use anyhow::Result;
 use anyhow::{Context, anyhow};
-use common::sync::{Client, LocalFileData};
+use common::sync::{Client as SyncClient, LocalFileData};
 use mockall_double::double;
 use notify::{Event, EventKind, event::ModifyKind};
 use tokio::fs;
+#[cfg(not(test))]
+use tower_lsp::Client as LspClient;
+use tower_lsp::lsp_types::MessageType;
 use tracing::{debug, error};
 
+#[cfg(test)]
+use crate::mocks::MockLspClient as LspClient;
 #[double]
 use crate::watching::WatchedSet;
 
@@ -17,9 +22,11 @@ pub struct PathStore {
 }
 
 impl PathStore {
-    pub fn new(client: Arc<dyn Client>) -> Result<Self> {
+    pub fn new(sync_client: Arc<dyn SyncClient>, lsp_client: Arc<LspClient>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
-            let client_clone = Arc::clone(&client);
+            let sync_client_clone = Arc::clone(&sync_client);
+            let lsp_client_clone = Arc::clone(&lsp_client);
+
             Box::pin(async move {
                 match process_event(&event).await {
                     Ok(data) => {
@@ -27,11 +34,22 @@ impl PathStore {
                             return;
                         };
 
-                        if let Err(err) = client_clone.sync_file(data).await {
-                            error!("{}", err);
+                        if let Err(err) = sync_client_clone.sync_file(data).await {
+                            error!("Could not sync file: {err}");
+                            lsp_client_clone
+                                .show_message(MessageType::ERROR, err.to_string())
+                                .await;
                         }
                     }
-                    Err(err) => error!("Could not process file event: {err}"),
+                    Err(err) => {
+                        error!("Could not process file event: {err}");
+                        lsp_client_clone
+                            .show_message(
+                                MessageType::ERROR,
+                                "File watcher internal error, check LSP server logs".to_owned(),
+                            )
+                            .await;
+                    }
                 }
             }) as Pin<Box<dyn Future<Output = ()> + Send>>
         });
@@ -79,29 +97,46 @@ async fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
 mod tests {
     #![allow(clippy::unwrap_used)]
 
-    use assert_fs::{TempDir, prelude::*};
-    use common::sync::MockGithubClient;
-    use mockall::{Sequence, predicate};
+    use assert_fs::{NamedTempFile, TempDir, prelude::*};
+    use common::sync::{Error, FileError, MockGithubClient};
+    use mockall::predicate;
+    use notify::event::{AccessKind, DataChange};
     use paste::paste;
+    use tokio::runtime::Runtime;
 
     use super::*;
-    use crate::watching::MockWatchedSet;
+    use crate::{
+        mocks::MockLspClient,
+        watching::{EventHandler, MockWatchedSet},
+    };
 
-    #[tokio::test]
-    async fn test_successful_creation() {
+    #[test]
+    fn test_successful_creation() {
         let ctx = MockWatchedSet::new_context();
         ctx.expect().returning(|_| Ok(MockWatchedSet::default()));
 
-        assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_ok());
+        assert!(
+            PathStore::new(
+                Arc::new(MockGithubClient::default()),
+                Arc::new(MockLspClient::default())
+            )
+            .is_ok()
+        );
     }
 
-    #[tokio::test]
-    async fn test_unsuccessful_creation_when_watched_set_creation_failed() {
+    #[test]
+    fn test_unsuccessful_creation_when_watched_set_creation_failed() {
         let ctx = MockWatchedSet::new_context();
         ctx.expect()
             .returning(|_| Err(anyhow!("Failed to create watched set")));
 
-        assert!(PathStore::new(Arc::new(MockGithubClient::default())).is_err());
+        assert!(
+            PathStore::new(
+                Arc::new(MockGithubClient::default()),
+                Arc::new(MockLspClient::default())
+            )
+            .is_err()
+        );
     }
 
     macro_rules! setup_watched_set_mock {
@@ -109,7 +144,7 @@ mod tests {
             paste! {
                 let ctx = MockWatchedSet::new_context();
                 ctx.expect().returning(move |_| {
-                    let mut seq = Sequence::new();
+                    let mut seq = mockall::Sequence::new();
                     let mut mock_watched_set = MockWatchedSet::default();
                     mock_watched_set
                         .expect_start_watcher()
@@ -117,7 +152,7 @@ mod tests {
                         .returning(|| ());
                     mock_watched_set
                         .[<expect_ $method>]()
-                        .with(predicate::eq($path))
+                        .with(mockall::predicate::eq($path))
                         .in_sequence(&mut seq)
                         .returning(|_| Ok(()));
 
@@ -129,7 +164,7 @@ mod tests {
             paste! {
                 let ctx = MockWatchedSet::new_context();
                 ctx.expect().returning(move |_| {
-                    let mut seq = Sequence::new();
+                    let mut seq = mockall::Sequence::new();
                     let mut mock_watched_set = MockWatchedSet::default();
                     mock_watched_set
                         .expect_start_watcher()
@@ -137,7 +172,7 @@ mod tests {
                         .returning(|| ());
                     mock_watched_set
                         .[<expect_ $method>]()
-                        .with(predicate::eq($path))
+                        .with(mockall::predicate::eq($path))
                         .in_sequence(&mut seq)
                         .returning(|_| Err(anyhow!($err_msg)));
 
@@ -147,8 +182,8 @@ mod tests {
         };
     }
 
-    #[tokio::test]
-    async fn test_successful_watch_path() -> Result<()> {
+    #[test]
+    fn test_successful_watch_path() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -156,15 +191,18 @@ mod tests {
 
         setup_watched_set_mock!(watch, path.clone());
 
-        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        let mut store = PathStore::new(
+            Arc::new(MockGithubClient::default()),
+            Arc::new(MockLspClient::default()),
+        )?;
         store.start_watcher();
         store.watch(path_clone)?;
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_unsuccessful_watch_path() -> Result<()> {
+    #[test]
+    fn test_unsuccessful_watch_path() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -172,7 +210,10 @@ mod tests {
 
         setup_watched_set_mock!(watch, path.clone(), "Path already being watched");
 
-        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        let mut store = PathStore::new(
+            Arc::new(MockGithubClient::default()),
+            Arc::new(MockLspClient::default()),
+        )?;
         store.start_watcher();
 
         assert_eq!(
@@ -183,8 +224,8 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_successful_unwatch_path() -> Result<()> {
+    #[test]
+    fn test_successful_unwatch_path() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -192,15 +233,18 @@ mod tests {
 
         setup_watched_set_mock!(unwatch, path.clone());
 
-        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        let mut store = PathStore::new(
+            Arc::new(MockGithubClient::default()),
+            Arc::new(MockLspClient::default()),
+        )?;
         store.start_watcher();
         store.unwatch(&path_clone)?;
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_unsuccessful_unwatch_path() -> Result<()> {
+    #[test]
+    fn test_unsuccessful_unwatch_path() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -208,7 +252,10 @@ mod tests {
 
         setup_watched_set_mock!(unwatch, path.clone(), "Path was not watched");
 
-        let mut store = PathStore::new(Arc::new(MockGithubClient::default()))?;
+        let mut store = PathStore::new(
+            Arc::new(MockGithubClient::default()),
+            Arc::new(MockLspClient::default()),
+        )?;
         store.start_watcher();
 
         assert_eq!(
@@ -219,35 +266,177 @@ mod tests {
         Ok(())
     }
 
-    /*
+    #[test]
+    fn test_non_modify_event_handling() -> Result<()> {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |event_handler: EventHandler| {
+            let event = Event::new(EventKind::Access(AccessKind::Read));
 
-    Integration tests, here or just for WatchedSet (TODO)
+            let rt = Runtime::new()?;
+            rt.block_on(async {
+                event_handler(event).await;
+            });
 
-    - events handling
-      - test create file does not trigger event handler
-        - create a store with the MockGithubClient passed
-        - start watcher
-        - add a new path to watch (assert_fs::TempDir), maybe with an already existing file
-        - create a new file in that dir
-        - ensure event was not triggered (MockGithubClient)
-      - test delete file does not trigger event handler
-        - create a store with the MockGithubClient passed
-        - start watcher
-        - add a new path to watch (assert_fs::TempDir), with an already existing file
-        - delete the file
-        - ensure event was not triggered (MockGithubClient)
-      - test modify file data triggers event handler
-        - create a store with the MockGithubClient passed
-        - start watcher
-        - add a new path to watch (assert_fs::TempDir), with an already existing file
-        - modify the file data
-        - ensure event was triggered (MockGithubClient)
-      - test modify file data outside of watched paths does not trigger event handler
-        - create a store with the MockGithubClient passed
-        - start watcher
-        - add a new path to watch (assert_fs::TempDir)
-        - create another assert_fs::TempDir with an existing file
-        - modify that file data
-        - ensure event was not triggered (MockGithubClient)
-        */
+            let mock_watched_set = MockWatchedSet::default();
+            Ok(mock_watched_set)
+        });
+
+        let mut mock_sync_client = MockGithubClient::default();
+        mock_sync_client.expect_sync_file().never();
+
+        PathStore::new(
+            Arc::new(mock_sync_client),
+            Arc::new(MockLspClient::default()),
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_modify_event_handling_without_modified_path() -> Result<()> {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |event_handler: EventHandler| {
+            let event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Any)));
+
+            let rt = Runtime::new()?;
+            rt.block_on(async {
+                event_handler(event).await;
+            });
+
+            let mock_watched_set = MockWatchedSet::default();
+            Ok(mock_watched_set)
+        });
+
+        let mut mock_sync_client = MockGithubClient::default();
+        mock_sync_client.expect_sync_file().never();
+
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client
+            .expect_show_message()
+            .with(
+                predicate::eq(MessageType::ERROR),
+                predicate::eq("File watcher internal error, check LSP server logs".to_owned()),
+            )
+            .return_once(|_msg_type, _msg| Box::pin(async {}));
+
+        PathStore::new(Arc::new(mock_sync_client), Arc::new(mock_lsp_client))?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_modify_event_handling_with_file_read_error() -> Result<()> {
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |event_handler: EventHandler| {
+            let mut event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Any)));
+            event = event.add_path(PathBuf::from("non-existent-file"));
+
+            let rt = Runtime::new()?;
+            rt.block_on(async {
+                event_handler(event).await;
+            });
+
+            let mock_watched_set = MockWatchedSet::default();
+            Ok(mock_watched_set)
+        });
+
+        let mut mock_sync_client = MockGithubClient::default();
+        mock_sync_client.expect_sync_file().never();
+
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client
+            .expect_show_message()
+            .with(
+                predicate::eq(MessageType::ERROR),
+                predicate::eq("File watcher internal error, check LSP server logs".to_owned()),
+            )
+            .return_once(|_msg_type, _msg| Box::pin(async {}));
+
+        PathStore::new(Arc::new(mock_sync_client), Arc::new(mock_lsp_client))?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_non_modify_event_handling_with_sync_success() -> Result<()> {
+        let temp_file = NamedTempFile::new("settings.json")?;
+        temp_file.write_str(r#"{ "hello": "kitty" }"#)?;
+        let temp_file_path = temp_file.path().to_path_buf();
+
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |event_handler: EventHandler| {
+            let mut event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Content)));
+            event = event.add_path(temp_file.path().to_path_buf());
+
+            let rt = Runtime::new()?;
+            rt.block_on(async {
+                event_handler(event).await;
+            });
+
+            let mock_watched_set = MockWatchedSet::default();
+            Ok(mock_watched_set)
+        });
+
+        let file_data = LocalFileData::new(temp_file_path, r#"{ "hello": "kitty" }"#.into())?;
+
+        let mut mock_sync_client = MockGithubClient::default();
+        mock_sync_client
+            .expect_sync_file()
+            .with(predicate::eq(file_data))
+            .return_once(|_| Ok(()));
+
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client.expect_show_message().never();
+
+        PathStore::new(Arc::new(mock_sync_client), Arc::new(mock_lsp_client))?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_non_modify_event_handling_with_sync_failure() -> Result<()> {
+        let temp_file = NamedTempFile::new("settings.json")?;
+        temp_file.write_str(r#"{ "hello": "kitty" }"#)?;
+        let temp_file_path = temp_file.path().to_path_buf();
+
+        let ctx = MockWatchedSet::new_context();
+        ctx.expect().returning(move |event_handler: EventHandler| {
+            let mut event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Content)));
+            event = event.add_path(temp_file.path().to_path_buf());
+
+            let rt = Runtime::new()?;
+            rt.block_on(async {
+                event_handler(event).await;
+            });
+
+            let mock_watched_set = MockWatchedSet::default();
+            Ok(mock_watched_set)
+        });
+
+        let file_data = LocalFileData::new(temp_file_path, r#"{ "hello": "kitty" }"#.into())?;
+
+        let mut mock_sync_client = MockGithubClient::default();
+        mock_sync_client
+            .expect_sync_file()
+            .with(predicate::eq(file_data))
+            .return_once(|_| {
+                Err(FileError::from_error(
+                    "settings.json",
+                    Error::UnhandledInternal("Sync error".into()),
+                ))
+            });
+
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client
+            .expect_show_message()
+            .with(
+                predicate::eq(MessageType::ERROR),
+                predicate::eq("Error syncing file settings.json: Unhandled internal error from underlying client library: Sync error".to_owned()),
+            )
+            .return_once(|_msg_type, _msg| Box::pin(async {}));
+
+        PathStore::new(Arc::new(mock_sync_client), Arc::new(mock_lsp_client))?;
+
+        Ok(())
+    }
 }
