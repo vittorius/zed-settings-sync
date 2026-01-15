@@ -4,160 +4,53 @@
 
 **Zed Settings Sync** is an extension for [Zed](https://zed.dev) that aims to add support of automatically syncing your user-level config files to a Github Gist using LSP.
 
-ℹ️ This extension doesn't sync local settings files (from the project dir) because it's more pragmatic to just check them in the project's VCS repository if needed.
+ℹ️ This extension doesn't sync project settings files because it's more pragmatic to just check them in the project's VCS repository if needed.
 
 Using LSP is a workaround because of the limited capabilities of current Zed extensions API.
 
 _Such an approach is heavily inspired by [Zed Discord Presence](https://github.com/xhyrom/zed-discord-presence) extension._
 
-## Requirements
-
-[rust](https://rust-lang.org) is required for installing this extension. \
-The easiest way to get [rust](https://rust-lang.org) is by using [rustup](https://rustup.rs).
-
-## How to install?
-
-### Dev installation
-
-1. Clone this repository
-2. <kbd>CTRL</kbd> + <kbd>SHIFT</kbd> + <kbd>P</kbd> and select <kbd>zed: install dev extension</kbd>
-3. Choose the directory where you cloned this repository
-4. After installing the extension, reload the workspace (<kbd>workspace: reload</kbd>) to start the LSP server
-5. Enjoy :)
-
-### Normal installation
+## Installation
 
 When a corresponding [Zed extensions repo](https://github.com/zed-industries/extensions) PR is created and merged, you can simply download the extension in <kbd>zed: extensions</kbd>.
 
-## How to configure?
+Until then, you can use the [dev installation mode](#dev-extension-installation).
 
-### Prepare a Github token
+## Configuration
 
-#### Using Github CLI
+### If you already have Zed but you don't have a settings Gist yet
 
-This is the easiest way.
-
-1. Install the official [Github CLI](https://github.com/cli/cli#installation)
-2. [Login](https://cli.github.com/manual/gh_auth_login) to Github using it
-3. Ensure your token has the `gist` OAuth scope (it should, by default):
-
-```shell
-gh auth status
-```
-
-<!-- markdownlint-disable MD029 -->
-
-4. Copy your token to the clipboard and paste it into your configuration file:
-
-macOS:
-
-```shell
-gh auth token | pbcopy
-```
-
-Linux:
-
-```shell
-gh auth token | xclip -selection clipboard
-```
-
-Windows:
-
-```shell
-gh auth token | clip
-```
-
-5. Paste it into your Settings Sync configuration:
-
-```jsonc
-{
-  // ...
-  "lsp": {
-    // ...
-    "settings_sync": {
-      "initialization_options": {
-        "github_token": "<your Github token>"
-        // ...
-      }
-    }
-  }
-}
-```
-
-#### Create a token yourself
-
-1. Create a new token [at Github](https://github.com/settings/personal-access-tokens/new).
-2. Ensure it has **Gists** permission under the **Account**.
-3. Perform all of the steps from the previous section to land this token into your Settings Sync LSP server configuration.
-
-### Prepare a Gist
-
-You need to create a Gist or have an existing one. If you're creating a new one, remember that it cannot be empty or contain zero-sized files.
-So, to create a Gist for our purposes, again, we have 2 options.
-
-#### Github CLI
-
-macOS / Linux:
-
-```shell
-echo "// Zed Settings\n\n{\n}\n" | gh gist create -f settings.json -d "Zed Settings"
-```
-
-Windows:
-
-```shell
-echo //^ Zed^ Settings| gh gist create -f settings.json -d "Zed Settings"
-```
-
-#### curl
-
-macOS / Linux:
-
-```shell
-curl -X POST -H "Authorization: token <your Github token>" -H "Content-Type: application/json" -d '{"description": "Zed Settings", "public": false, "files": {"settings.json": {"content": "// Zed Settings\n\n{\n}\n"}}}' https://api.github.com/gists
-```
-
-Windows:
-
-```shell
-curl.exe -X POST -H "Authorization: token <your Github token>" -H "Content-Type: application/json" -d "{\"description\":\"Zed Settings\",\"public\":false,\"files\":{\"settings.json\":{\"content\":\"// Zed Settings\n\n{\n}\n\"}}}" https://api.github.com/gists
-```
-
-#### Insert Gist ID into your Settings Sync configuration
-
-5. Paste it into your Settings Sync configuration:
-
-```jsonc
-{
-  // ...
-  "lsp": {
-    // ...
-    "settings_sync": {
-      "initialization_options": {
-        "gist_id": "<your Gist Id>"
-        // ...
-      }
-    }
-  }
-}
-```
-
-### Example configuration
+1. Create a Github token with `gist` permission scope ([detailed guide](docs/CREATE_GITHUB_TOKEN.md)).
+2. Prepare a Gist ([detailed guide](docs/CREATE_SETTINGS_GIST.md)).
+3. Add credentials to your Zed settings file:
 
 ```jsonc
 {
   "lsp": {
     "settings_sync": {
       "initialization_options": {
-        "github_token": "gho_nA8tK4GxW9eR1bY0uZqT7sL2pCjD5vFhE",
-        "gist_id": "e565898c6f664eb916c54de1e99ebe74"
+        "github_token": "gho_my-shiny-token",
+        "gist_id": "deadbeefdeadbeefdeadbeefdeadbeef"
       }
     }
   }
 }
 ```
 
-## How to use?
+### If you've installed a fresh Zed and want to pull in your settings from an existing Gist
+
+⚠️ Unfortunately, due to the currently limited functionality of Zed extensions in general, the extension itself cannot load settings from a Github Gist. A CLI tool is provided for that purpose.
+
+Ensure you have your [Github token](docs/CREATE_GITHUB_TOKEN.md) and [Gist ID](docs/CREATE_SETTINGS_GIST.md) at hand.
+
+1. Install [eget](https://github.com/zyedidia/eget)
+2. Run `sudo eget vittorius/zed-settings-sync --to=<your local bin directory>`
+3. Pick the `zed-settings-sync` binary in the choice provided by eget
+4. Run `zed-settings-sync load` and follow the instructions
+
+(Of course, you can download and unpack the binary manually from [Github releases](https://github.com/vittorius/zed-settings-sync/releases))
+
+## Usage
 
 ### Syncing to a Github Gist
 
@@ -168,7 +61,7 @@ Given, you've configured everything correctly, now you can:
 - edit tasks (<kbd>zed: open tasks</kbd>)
 - edit debug tasks (<kbd>zed: open debug tasks</kbd>)
 
-After the file is saved, either manually, or triggered by the auto-save feature, it will be synchronized to the Gist you've specified.
+After the file is saved, either manually, or with the auto-save feature, it will be synchronized to the Gist you've specified.
 
 ℹ️ At some point, Zed has added graphical interface for editing Settings and Keymap.
 It pops up by default when you run <kbd>zed: open settings</kbd> or <kbd>zed: open keymap</kbd> workbench action.
@@ -188,21 +81,41 @@ Another approach could be swapping the keymap entries for <kbd>zed: open setting
 }
 ```
 
-### Loading settings back from a Github Gist
-
-⚠️ Unfortunately, the extension in its current implementation does not provide an action or a command to load settings from a Github Gist.
-This is because of the limited functionality of Zed extensions in general. But, a CLI tool (TBD) is provided to download settings from the Gist.
-
-- TODO: add a section about the binary CLI crate to download settings from the Gist
-
 ## Troubleshooting
 
-- Open LSP logs (<kbd>dev: open language server logs</kbd>), find Settings Sync LSP server, and inspect its log
+- Open LSP logs (<kbd>dev: open language server logs</kbd>), find `settings_sync` LSP server instance running for the specific settings file, and inspect its log
 - File an [issue](https://github.com/vittorius/zed-settings-sync/issues/new) on Github
 
 ## Development
 
-- Use [Nextest](https://nexte.st/) test runner ([some tests](common/src/config.rs) rely on it to be run without the need of cross-thread synchronization)
-- TODO: install rust and other components via rustup
-- TODO: install iprecommit (install uv, do uv venv, do ux pip install iprecommit)
-- TODO: other necessary setup
+### Dev environment setup
+
+Requirements:
+
+- [Git](https://git-scm.com/)
+- [Rust](https://rust-lang.org) is required. The easiest way to get [rust](https://rust-lang.org) is by using [rustup](https://rustup.rs).
+- [Nextest](https://nexte.st/) test runner ([some tests](common/src/config.rs) rely on it to be run without the need of cross-thread synchronization)
+- [iprecommit](https://github.com/iafisher/iprecommit) for Git hooks
+  - install `uv`
+  - change directory to where you cloned this repository
+  - do `uv venv`
+  - do `uvx pip install iprecommit`
+  - do `uvx precommit install`
+
+### Dev extension installation
+
+1. Clone this repository
+2. <kbd>CTRL</kbd> + <kbd>SHIFT</kbd> + <kbd>P</kbd> and select <kbd>zed: install dev extension</kbd>
+3. Choose the directory where you cloned this repository
+4. After installing the extension, reload the workspace (<kbd>workspace: reload</kbd>) to start the LSP server
+
+### Quick feedback loop when working on the LSP server
+
+Run
+
+```shell
+cargo xtask-lsp-install
+```
+
+to install the LSP server binary from your local repository to the Zed extension directory.
+Then, run <kbd>workspace: reload</kbd> action within your Zed instance for your dev extension to catch up the updated LSP server binary.
