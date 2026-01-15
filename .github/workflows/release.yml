@@ -31,7 +31,7 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const packages = ["zed-settings-sync", "zed-settings-sync-lsp"];
+            const packages = ["zed-settings-sync-cli", "zed-settings-sync-lsp"];
             const runners = [
               {
                 "target": "x86_64-unknown-linux-gnu",
