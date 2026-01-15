@@ -1,5 +1,6 @@
 [package]
 name = "zed-settings-sync-lsp"
+description = "An LSP server for Zed editor settings_sync extension"
 version = "0.0.1-alpha.4"
 edition = "2024"
 

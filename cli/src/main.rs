@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
         Command::Load { force } => {
             load(&mut std_io, force).await?;
         }
-    };
+    }
 
     std_io.write_line("🟢 All done.")?;
 
@@ -121,6 +121,8 @@ mod tests {
             .in_sequence(seq)
             .returning(move |client, _io, force_received| {
                 // testing that FileLoader has received the correct client, configured from Config properties
+                // TODO: remove this allow once clippy is fixed
+                #[allow(clippy::ref_as_ptr, clippy::ptr_as_ptr, clippy::cast_ptr_alignment)]
                 let mock_github_client: &MockGithubClient =
                     unsafe { &(*(client as *const dyn Client as *const MockGithubClient)) };
                 assert_eq!(mock_github_client.id(), "mock_client_id");

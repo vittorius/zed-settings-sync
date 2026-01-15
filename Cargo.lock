@@ -4131,6 +4131,13 @@ dependencies = [
 name = "zed-settings-sync"
 version = "0.0.1-alpha.4"
 dependencies = [
+ "zed_extension_api",
+]
+
+[[package]]
+name = "zed-settings-sync-cli"
+version = "0.0.1-alpha.4"
+dependencies = [
  "anyhow",
  "assert_fs",
  "clap",
@@ -4143,7 +4150,6 @@ dependencies = [
  "paths",
  "test_support",
  "tokio",
- "zed_extension_api",
 ]
 
 [[package]]

@@ -22,13 +22,14 @@ impl<'a> FileLoader<'a> {
         for file_load_result in self.client.load_files().await? {
             match file_load_result {
                 Ok((file_name, content)) => self.process_loaded_file(file_name, content)?,
-                Err(e) => self.io.write_line(&format!("🔴 {}", e))?,
+                Err(e) => self.io.write_line(&format!("🔴 {e}"))?,
             }
         }
 
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn process_loaded_file(&mut self, file_name: String, content: String) -> Result<()> {
         let file_path = zed_paths::config_dir().join(&file_name);
 

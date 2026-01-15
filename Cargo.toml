@@ -10,7 +10,7 @@ keywords = ["zed", "editor", "extension", "settings", "sync"]
 categories = ["development-tools", "text-editors"]
 
 [workspace]
-members = ["common", "lsp", "xtask-lsp-install", "test_support"]
+members = ["common", "lsp", "test_support", "cli", "xtask-lsp-install"]
 
 [workspace.dependencies]
 anyhow = "1.0.100"
@@ -27,22 +27,7 @@ ctor = { version = "0.6.3", default-features = false, features = ["proc_macro"] 
 paths = { git = "https://github.com/zed-industries/zed.git" }
 
 [dependencies]
-anyhow = { workspace = true }
-jsonc-parser = { workspace = true }
-octocrab = { workspace = true }
 zed_extension_api = { workspace = true }
-tokio = { workspace = true }
-paths = { workspace = true }
-common = { path = "./common" }
-clap = { version = "4.5.53", features = ["derive"] }
-mockall_double = "0.3.1"
-
-[dev-dependencies]
-assert_fs = { workspace = true }
-ctor = { workspace = true }
-mockall = { workspace = true }
-common = { path = "./common", features = ["test-support"] }
-test_support = { path = "./test_support" }
 
 [lib]
 crate-type = ["cdylib"]
