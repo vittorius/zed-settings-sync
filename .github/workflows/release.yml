@@ -21,92 +21,102 @@ jobs:
       - name: check
         uses: ./.github/actions/check
 
-  # setup:
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     matrix: ${{ steps.set-matrix.outputs.result }}
-  #   steps:
-  #     - id: set-matrix
-  #       uses: actions/github-script@v8
-  #       with:
-  #         script: |
-  #           const packages = ["zed-settings-sync", "zed-settings-sync-lsp"];
-  #           const runners = [
-  #           { "target": "x86_64-unknown-linux-gnu",
-  #             "runner": "ubuntu-latest",
-  #             "bootstrap": "sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config"
-  #           },
+  setup:
+    runs-on: ubuntu-latest
+    needs: check
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.result }}
+    steps:
+      - id: set-matrix
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const packages = ["zed-settings-sync", "zed-settings-sync-lsp"];
+            const runners = [
+              {
+                "target": "x86_64-unknown-linux-gnu",
+                "runner": "ubuntu-latest",
+                "bootstrap": "sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config"
+              },
+  
+              {
+                "target": "aarch64-unknown-linux-gnu",
+                "runner": "ubuntu-latest",
+                "bootstrap": `
+                  sudo apt-get update
+                  sudo apt-get -y install podman
+                  cargo install cross
+                  cargo clean
+                  echo "CARGO_BINARY=cross" >> $GITHUB_ENV
+                  `
+              },
+  
+              {
+                "target": "x86_64-apple-darwin",
+                "runner": "macos-15-intel",
+              },
+  
+              {
+                "target": "aarch64-apple-darwin",
+                "runner": "macos-latest",
+                "bootstrap": "echo \"OPENSSL_DIR=$(brew --prefix openssl@3)\" >> $GITHUB_ENV"
+              },
+  
+              {
+                "target": "x86_64-pc-windows-msvc",
+                "runner": "windows-latest",
+              },
+  
+              {
+                "target": "aarch64-pc-windows-msvc",
+                "runner": "windows-11-arm",
+              }
+            ];
 
-  #            { "target": "aarch64-unknown-linux-gnu",
-  #             "runner": "ubuntu-latest",
-  #             "bootstrap": `
-  #               sudo apt-get update
-  #               sudo apt-get -y install podman
-  #               cargo install cross
-  #               cargo clean
-  #               echo "CARGO_BINARY=cross" >> $GITHUB_ENV
-  #                 `
-  #            },
-
-  #            { "target": "x86_64-apple-darwin",
-  #             "runner": "macos-15-intel",
-  #            },
-
-  #            { "target": "aarch64-apple-darwin",
-  #             "runner": "macos-latest",
-  #             "bootstrap": "echo \"OPENSSL_DIR=$(brew --prefix openssl@3)\" >> $GITHUB_ENV"
-  #            },
-
-  #            { "target": "x86_64-pc-windows-msvc",
-  #             "runner": "windows-latest",
-  #            },
-
-  #            target: aarch64-pc-windows-msvc
-  #             runner: windows-11-arm
-  #             ];
-
-  #           const run_configs = packages.flatMap(pkg =>
-  #             runners.map(runner => ({
-  #               ...runner,
-  #               package_name: pkg
-  #             }))
-  #           );
-  #           return run_configs;
+            return packages.flatMap(pkg =>
+              runners.map(runner => ({
+                ...runner,
+                package_name: pkg
+              }))
+            );
 
   compile:
     name: compile ${{ matrix.target }}
     runs-on: ${{ matrix.runner  }}
-    needs: check
+    # needs: check
+    needs: setup
     strategy:
       fail-fast: false
+      # matrix:
+      #   package_name: ["zed-settings-sync", "zed-settings-sync-lsp"]
+      #   include:
+      #     - target: x86_64-unknown-linux-gnu
+      #       runner: ubuntu-latest
+      #       bootstrap: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+
+      #     - target: aarch64-unknown-linux-gnu
+      #       runner: ubuntu-latest
+      #       bootstrap: |
+      #         sudo apt-get update
+      #         sudo apt-get -y install podman
+      #         cargo install cross
+      #         cargo clean
+      #         echo "CARGO_BINARY=cross" >> $GITHUB_ENV
+
+      #     - target: x86_64-apple-darwin
+      #       runner: macos-15-intel
+
+      #     - target: aarch64-apple-darwin
+      #       runner: macos-latest
+      #       bootstrap: echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+
+      #     - target: x86_64-pc-windows-msvc
+      #       runner: windows-latest
+
+      #     - target: aarch64-pc-windows-msvc
+      #       runner: windows-11-arm
       matrix:
-        package_name: ["zed-settings-sync", "zed-settings-sync-lsp"]
-        include:
-          - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-latest
-            bootstrap: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
-
-          - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-latest
-            bootstrap: |
-              sudo apt-get update
-              sudo apt-get -y install podman
-              cargo install cross
-              cargo clean
-              echo "CARGO_BINARY=cross" >> $GITHUB_ENV
-
-          - target: x86_64-apple-darwin
-            runner: macos-15-intel
-
-          - target: aarch64-apple-darwin
-            runner: macos-latest
-            bootstrap: echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
-
-          - target: x86_64-pc-windows-msvc
-            runner: windows-latest
-
-          - target: aarch64-pc-windows-msvc
-            runner: windows-11-arm
+        include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
