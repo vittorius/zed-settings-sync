@@ -139,8 +139,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
+          tag_name: ${{ inputs.package_name }}/v${{ inputs.version }}
+          name: ${{ inputs.package_name }}/v${{ inputs.version }}
           draft: true
           files: |
             artifacts/**/*
