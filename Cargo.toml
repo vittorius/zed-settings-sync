@@ -8,6 +8,7 @@ repository = "https://github.com/vittorius/zed-settings-sync"
 readme = "README.md"
 keywords = ["zed", "editor", "extension", "settings", "sync"]
 categories = ["development-tools", "text-editors"]
+publish = false
 
 [workspace]
 members = ["common", "lsp", "test_support", "cli", "xtask-lsp-install"]
