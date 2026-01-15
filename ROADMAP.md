@@ -39,7 +39,7 @@
 
 ## Documentation
 
-- [ ] Simplify README before public release
-- [ ] Add eget entry to README part about the installation instructions
-- [ ] Add docs on how to "sync back" the settings' files from a Gist if they are lost or it's a fresh dev environment
-- [ ] Verify that there are roughly "How to setup" and "How to run" sections in the README.md file
+- [x] Simplify README before public release
+- [x] Add eget entry to README part about the installation instructions
+- [x] Add docs on how to "sync back" the settings' files from a Gist if they are lost or it's a fresh dev environment
+- [x] Verify that there are roughly "How to setup" and "How to run" sections in the README.md file
