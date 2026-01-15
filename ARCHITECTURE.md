@@ -4,6 +4,16 @@
 - Add edits should be applied synced to the external storage (Gist) in the same order they were applied to the file
 - No excessive synchronizations: as few requests to the external storage as possible
 
+## Architecture v0.0.7
+
+### Extension
+
+- LSP server's path watcher store notifies LSP client with an error message if a file sync has failed or there is an internal file watcher error. These messages are displayed by Zed as popups.
+
+### CLI tool
+
+- We don't try to load credentials from the Zed settings file anymore because it's creates an inconvenient user flow. The only option that CLI tool provides is the interactive input of credentials.
+
 ## Architecture v0.0.6
 
 ### CLI tool
