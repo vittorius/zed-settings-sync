@@ -45,8 +45,8 @@ Ensure you have your [Github token](docs/CREATE_GITHUB_TOKEN.md) and [Gist ID](d
 
 1. Install [eget](https://github.com/zyedidia/eget)
 2. Run `sudo eget vittorius/zed-settings-sync --to=<your local bin directory>`
-3. Pick the `zed-settings-sync` binary in the choice provided by eget
-4. Run `zed-settings-sync load` and follow the instructions
+3. Pick the `zed-settings-sync-cli` binary in the choice provided by eget
+4. Run `zed-settings-sync-cli load` and follow the instructions
 
 (Of course, you can download and unpack the binary manually from [Github releases](https://github.com/vittorius/zed-settings-sync/releases))
 
