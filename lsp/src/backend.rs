@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use anyhow::Result;
@@ -59,7 +59,7 @@ impl Backend {
         Ok(())
     }
 
-    fn unwatch_path(&self, path: &PathBuf) -> Result<()> {
+    fn unwatch_path(&self, path: &Path) -> Result<()> {
         let info_msg = format!("Unwatching path: {}", path.display());
 
         #[allow(clippy::expect_used)]

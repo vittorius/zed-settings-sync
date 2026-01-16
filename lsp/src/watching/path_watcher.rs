@@ -20,6 +20,7 @@ pub struct PathWatcher {
     event_handler: Option<DebugIgnore<EventHandler>>, // DebugIgnore because Fn traits can't implement Debug
 }
 
+#[cfg_attr(test, mockall::automock)]
 impl PathWatcher {
     pub fn new(event_handler: EventHandler) -> Result<Self> {
         let (tx, rx) = channel(1);
@@ -68,7 +69,7 @@ impl PathWatcher {
         });
     }
 
-    pub fn watch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub fn watch(&self, path: &Path) -> Result<()> {
         self.watcher
             .lock()
             .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
@@ -77,7 +78,7 @@ impl PathWatcher {
         Ok(())
     }
 
-    pub fn unwatch<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub fn unwatch(&self, path: &Path) -> Result<()> {
         self.watcher
             .lock()
             .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
@@ -85,4 +86,37 @@ impl PathWatcher {
 
         Ok(())
     }
+}
+
+mod tests {
+
+    /*
+    Tests TODO
+    - events handling
+      - test create file does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), maybe with an already existing file
+        - create a new file in that dir
+        - ensure event was not triggered (MockGithubClient)
+      - test delete file does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), with an already existing file
+        - delete the file
+        - ensure event was not triggered (MockGithubClient)
+      - test modify file data triggers event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir), with an already existing file
+        - modify the file data
+        - ensure event was triggered (MockGithubClient)
+      - test modify file data outside of watched paths does not trigger event handler
+        - create a store with the MockGithubClient passed
+        - start watcher
+        - add a new path to watch (assert_fs::TempDir)
+        - create another assert_fs::TempDir with an existing file
+        - modify that file data
+        - ensure event was not triggered (MockGithubClient)
+        */
 }

@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{path::PathBuf, pin::Pin, sync::Arc};
 
 use anyhow::Result;
@@ -69,7 +70,7 @@ impl PathStore {
         self.watched_set.watch(file_path)
     }
 
-    pub fn unwatch(&mut self, file_path: &PathBuf) -> anyhow::Result<()> {
+    pub fn unwatch(&mut self, file_path: &Path) -> anyhow::Result<()> {
         self.watched_set.unwatch(file_path)
     }
 }
