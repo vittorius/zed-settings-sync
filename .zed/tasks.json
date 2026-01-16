@@ -17,8 +17,18 @@
     "tags": ["rust-mod-test"],
   },
   {
+    "label": "cargo watch nextest $ZED_STEM (package: $ZED_CUSTOM_RUST_PACKAGE)",
+    "command": "cargo watch -q -c -w $ZED_FILE -x 'nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_STEM::$ZED_SYMBOL'",
+    "tags": ["rust-mod-test"],
+  },
+  {
     "label": "cargo nextest tests (crate root)",
     "command": "cargo nextest run -E 'test(/^tests/)'",
+    "tags": ["rust-mod-test"],
+  },
+  {
+    "label": "cargo watch nextest tests (crate root)",
+    "command": "cargo watch -q -c -w $ZED_FILE",
     "tags": ["rust-mod-test"],
   },
   {
