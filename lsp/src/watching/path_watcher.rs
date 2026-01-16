@@ -74,7 +74,6 @@ impl PathWatcher {
     }
 
     pub fn watch(&self, path: &Path) -> Result<()> {
-        // println!("Watcher is running: {}", self.watcher.lock().unwrap())
         self.watcher
             .lock()
             .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
