@@ -73,7 +73,10 @@ impl WatchedSet {
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-    use std::{path::PathBuf, sync::OnceLock};
+    use std::{
+        path::PathBuf,
+        sync::atomic::{AtomicBool, Ordering},
+    };
 
     use anyhow::Result;
     use notify::{Event, EventKind};
@@ -87,13 +90,11 @@ mod tests {
 
     #[test]
     fn test_new_successful() -> Result<()> {
-        static EVENT_HANDLER_CALLED: OnceLock<bool> = OnceLock::new();
+        static EVENT_HANDLER_CALLED: AtomicBool = AtomicBool::new(false);
 
         let event_handler: EventHandler = Box::new(|_| {
             Box::pin(async {
-                EVENT_HANDLER_CALLED
-                    .set(true)
-                    .expect("Flag was already set");
+                EVENT_HANDLER_CALLED.store(true, Ordering::Relaxed);
             })
         });
 
@@ -108,7 +109,7 @@ mod tests {
 
         let set = WatchedSet::new(event_handler)?;
         assert!(set.paths.is_empty());
-        assert!(EVENT_HANDLER_CALLED.get().expect("Flag was not set")); // testing that WatchedSet passes the event handler to PathWatcher
+        assert!(EVENT_HANDLER_CALLED.load(Ordering::Relaxed)); // testing that WatchedSet passes the event handler to PathWatcher
 
         Ok(())
     }
