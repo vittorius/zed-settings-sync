@@ -101,7 +101,7 @@ mod tests {
     use assert_fs::{NamedTempFile, TempDir, prelude::*};
     use common::sync::{Error, FileError, MockGithubClient};
     use mockall::predicate;
-    use notify::event::{AccessKind, DataChange};
+    use notify::event::{AccessKind, AccessMode, CreateKind, DataChange, RemoveKind};
     use paste::paste;
     use tokio::runtime::Runtime;
 
@@ -271,11 +271,20 @@ mod tests {
     fn test_non_modify_event_handling() -> Result<()> {
         let ctx = MockWatchedSet::new_context();
         ctx.expect().returning(move |event_handler: EventHandler| {
-            let event = Event::new(EventKind::Access(AccessKind::Read));
+            let non_modify_events = [
+                Event::new(EventKind::Access(AccessKind::Read)),
+                Event::new(EventKind::Access(AccessKind::Open(AccessMode::Any))),
+                Event::new(EventKind::Create(CreateKind::File)),
+                Event::new(EventKind::Create(CreateKind::Folder)),
+                Event::new(EventKind::Remove(RemoveKind::File)),
+                Event::new(EventKind::Remove(RemoveKind::Folder)),
+            ];
 
             let rt = Runtime::new()?;
             rt.block_on(async {
-                event_handler(event).await;
+                for event in non_modify_events {
+                    event_handler(event).await;
+                }
             });
 
             let mock_watched_set = MockWatchedSet::default();
@@ -359,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn test_non_modify_event_handling_with_sync_success() -> Result<()> {
+    fn test_modify_event_handling_with_sync_success() -> Result<()> {
         let temp_file = NamedTempFile::new("settings.json")?;
         temp_file.write_str(r#"{ "hello": "kitty" }"#)?;
         let temp_file_path = temp_file.path().to_path_buf();
@@ -395,7 +404,7 @@ mod tests {
     }
 
     #[test]
-    fn test_non_modify_event_handling_with_sync_failure() -> Result<()> {
+    fn test_modify_event_handling_with_sync_failure() -> Result<()> {
         let temp_file = NamedTempFile::new("settings.json")?;
         temp_file.write_str(r#"{ "hello": "kitty" }"#)?;
         let temp_file_path = temp_file.path().to_path_buf();
