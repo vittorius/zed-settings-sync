@@ -30,7 +30,7 @@ pub trait Client: Send + Sync {
 }
 
 #[derive(Error, Debug)]
-#[error("Error processing file {file_name}: {error}")]
+#[error("Error syncing file {file_name}: {error}")]
 pub struct FileError {
     file_name: String,
     error: Error,
