@@ -1,7 +1,9 @@
+mod path_store;
 mod path_watcher;
-mod store;
+mod watched_set;
 mod zed_config;
 
+pub use path_store::*;
 pub use path_watcher::*;
-pub use store::*;
+pub use watched_set::*;
 pub use zed_config::*;

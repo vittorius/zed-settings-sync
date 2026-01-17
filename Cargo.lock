@@ -2062,6 +2062,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
 name = "paths"
 version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed.git#7644e797feb14b1011d9a2ed70f65e6cccafdb47"
@@ -4157,13 +4163,19 @@ name = "zed-settings-sync-lsp"
 version = "0.0.1-alpha.5"
 dependencies = [
  "anyhow",
+ "assert_fs",
  "common",
+ "ctor",
  "debug-ignore",
  "jsonc-parser",
+ "mockall",
+ "mockall_double",
  "notify",
  "octocrab",
+ "paste",
  "paths",
  "serde",
+ "test_support",
  "tokio",
  "tower-lsp",
  "tracing",

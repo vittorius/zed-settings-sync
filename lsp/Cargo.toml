@@ -13,7 +13,7 @@ jsonc-parser = { workspace = true }
 octocrab = { workspace = true }
 zed_extension_api = { workspace = true }
 serde = { workspace = true }
-tokio = { workspace = true, features = ["io-std"] }
+tokio = { workspace = true, features = ["io-std", "fs"] }
 tracing = { workspace = true }
 paths = { workspace = true }
 common = { path = "../common" }
@@ -21,3 +21,12 @@ debug-ignore = "1.0.5"
 notify = "8.2.0"
 tower-lsp = "0.20.0" # TODO: upgrade
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "chrono"] }
+mockall_double = { workspace = true }
+
+[dev-dependencies]
+common = { path = "../common", features = ["test-support"] }
+test_support = { path = "../test_support" }
+mockall = { workspace = true }
+assert_fs = { workspace = true }
+ctor = { workspace = true }
+paste = "1.0.15"
