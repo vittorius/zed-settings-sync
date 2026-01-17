@@ -1,10 +1,11 @@
-use std::{fs, path::PathBuf, pin::Pin, sync::Arc};
+use std::{path::PathBuf, pin::Pin, sync::Arc};
 
 use anyhow::Result;
 use anyhow::{Context, anyhow};
 use common::sync::{Client, LocalFileData};
 use mockall_double::double;
 use notify::{Event, EventKind, event::ModifyKind};
+use tokio::fs;
 use tracing::{debug, error};
 
 #[double]
@@ -20,7 +21,7 @@ impl PathStore {
         let event_handler = Box::new(move |event| {
             let client_clone = Arc::clone(&client);
             Box::pin(async move {
-                match process_event(&event) {
+                match process_event(&event).await {
                     Ok(data) => {
                         let Some(data) = data else {
                             return;
@@ -55,7 +56,7 @@ impl PathStore {
     }
 }
 
-fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
+async fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
     debug!("Processing file watcher event: {event:?}");
 
     let EventKind::Modify(ModifyKind::Data(_)) = event.kind else {
@@ -67,7 +68,9 @@ fn process_event(event: &Event) -> Result<Option<LocalFileData>> {
         "event did not provide the path of the modified file"
     ))?;
 
-    let body = fs::read_to_string(&path).with_context(|| "Could not read the modified file")?;
+    let body = fs::read_to_string(&path)
+        .await
+        .with_context(|| format!("Could not read the modified file: {}", path.display()))?;
 
     Ok(Some(LocalFileData::new(path, body)?))
 }
