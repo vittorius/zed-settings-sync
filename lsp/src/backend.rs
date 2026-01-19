@@ -65,7 +65,7 @@ impl Backend {
         #[allow(clippy::expect_used)]
         self.app_state
             .get()
-            .expect("App state must be already initialized")
+            .expect("App state must be initialized")
             .lock()
             .expect("Watched paths store mutex is poisoned")
             .watched_paths
@@ -104,12 +104,12 @@ impl LanguageServer for Backend {
         #[allow(clippy::expect_used)]
         self.app_state
             .set(Mutex::new(app_state))
-            .expect("AppState should not yet be initialized");
+            .expect("AppState was already initialized");
 
         #[allow(clippy::expect_used)]
         self.app_state
             .get()
-            .expect("App state should have been already initialized")
+            .expect("App state should be initialized")
             .lock()
             .expect("Watched paths store mutex is poisoned")
             .watched_paths
@@ -198,19 +198,109 @@ impl LanguageServer for Backend {
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::expect_used)]
+    #![allow(clippy::unwrap_used)]
 
+    use std::path::Path;
     use std::path::PathBuf;
 
     use anyhow::Result;
+    use anyhow::anyhow;
     use mockall::{Sequence, predicate};
     use tower_lsp::{LanguageServer, lsp_types::InitializeParams};
-    use zed_extension_api::serde_json::json;
+    use zed_extension_api::serde_json::{Value, json};
 
     use crate::{backend::Backend, mocks::MockLspClient, watching::MockPathStore};
 
+    async fn init_lsp_backend(initialization_options: Option<Value>) -> Result<Backend> {
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client
+            .expect_clone()
+            .returning(MockLspClient::default);
+
+        let backend = Backend::new(mock_lsp_client);
+        let initialize_params = InitializeParams {
+            initialization_options,
+            ..Default::default()
+        };
+        backend.initialize(initialize_params).await?;
+
+        Ok(backend)
+    }
+
+    async fn init_lsp_backend_default() -> Result<Backend> {
+        init_lsp_backend(Some(json!({
+            "github_token": "gho_my-shiny-token",
+            "gist_id": "deadbeefdeadbeefdeadbeefdeadbeef"
+        })))
+        .await
+    }
+
     #[tokio::test]
-    async fn test_watch_success() -> Result<()> {
+    async fn test_initialize_success() -> Result<()> {
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store.expect_start_watcher().returning(|| ());
+            Ok(mock_path_store)
+        });
+
+        init_lsp_backend_default().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_initialize_failure_missing_initialization_options() -> Result<()> {
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store.expect_start_watcher().returning(|| ());
+            Ok(mock_path_store)
+        });
+
+        assert!(init_lsp_backend(None).await.is_err());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_initialize_failure_invalid_initialization_options() -> Result<()> {
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store.expect_start_watcher().returning(|| ());
+            Ok(mock_path_store)
+        });
+
+        let test_cases = [
+            json!({
+               "hello": "world"
+            }),
+            json!({
+               "gist_id": "1234"
+            }),
+            json!({
+               "github_token": "tok"
+            }),
+            json!({
+               "gist_id": "1234",
+               "random_key": "value"
+            }),
+            json!({
+               "github_token": "5678",
+               "random_prop": "val"
+            }),
+        ];
+
+        for test in test_cases {
+            assert!(init_lsp_backend(Some(test)).await.is_err());
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_watch_path_success() -> Result<()> {
         let path = "/path/to/watch";
 
         let ctx = MockPathStore::new_context();
@@ -229,22 +319,102 @@ mod tests {
             Ok(mock_path_store)
         });
 
-        let mut mock_lsp_client = MockLspClient::default();
-        mock_lsp_client
-            .expect_clone()
-            .returning(MockLspClient::default);
-
-        let backend = Backend::new(mock_lsp_client);
-        let initialize_params = InitializeParams {
-            initialization_options: Some(json!({
-                "github_token": "gho_my-shiny-token",
-                "gist_id": "deadbeefdeadbeefdeadbeefdeadbeef"
-            })),
-            ..Default::default()
-        };
-        backend.initialize(initialize_params).await?;
+        let backend = init_lsp_backend_default().await?;
 
         backend.watch_path(PathBuf::from(path))?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_watch_path_failure_path_store_watch_failed() -> Result<()> {
+        let path = "/path/to/watch";
+
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut seq = Sequence::new();
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store
+                .expect_start_watcher()
+                .in_sequence(&mut seq)
+                .returning(|| ());
+            mock_path_store
+                .expect_watch()
+                .in_sequence(&mut seq)
+                .with(predicate::eq(PathBuf::from(path.to_string())))
+                .returning(|_| Err(anyhow!("Failed to watch path")));
+            Ok(mock_path_store)
+        });
+
+        let backend = init_lsp_backend_default().await?;
+
+        assert_eq!(
+            backend
+                .watch_path(PathBuf::from(path))
+                .unwrap_err()
+                .to_string(),
+            "Failed to watch path"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_unwatch_path_success() -> Result<()> {
+        let path = "/path/to/watch";
+
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut seq = Sequence::new();
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store
+                .expect_start_watcher()
+                .in_sequence(&mut seq)
+                .returning(|| ());
+            mock_path_store
+                .expect_unwatch()
+                .in_sequence(&mut seq)
+                .with(predicate::eq(PathBuf::from(path.to_string())))
+                .returning(|_| Ok(()));
+            Ok(mock_path_store)
+        });
+
+        let backend = init_lsp_backend_default().await?;
+
+        backend.unwatch_path(Path::new(path))?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_unwatch_path_failure_path_store_watch_failed() -> Result<()> {
+        let path = "/path/to/watch";
+
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut seq = Sequence::new();
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store
+                .expect_start_watcher()
+                .in_sequence(&mut seq)
+                .returning(|| ());
+            mock_path_store
+                .expect_unwatch()
+                .in_sequence(&mut seq)
+                .with(predicate::eq(PathBuf::from(path.to_string())))
+                .returning(|_| Err(anyhow!("Failed to unwatch path")));
+            Ok(mock_path_store)
+        });
+
+        let backend = init_lsp_backend_default().await?;
+
+        assert_eq!(
+            backend
+                .unwatch_path(Path::new(path))
+                .unwrap_err()
+                .to_string(),
+            "Failed to unwatch path"
+        );
 
         Ok(())
     }
