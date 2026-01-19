@@ -22,6 +22,7 @@ pub struct PathStore {
     watched_set: WatchedSet,
 }
 
+#[cfg_attr(test, mockall::automock)]
 impl PathStore {
     pub fn new(sync_client: Arc<dyn SyncClient>, lsp_client: Arc<LspClient>) -> Result<Self> {
         let event_handler = Box::new(move |event| {

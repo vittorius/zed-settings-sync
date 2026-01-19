@@ -48,7 +48,7 @@ impl Backend {
         #[allow(clippy::expect_used)]
         self.app_state
             .get()
-            .expect("App state must already be initialized")
+            .expect("App state must be initialized")
             .lock()
             .expect("Watched paths store mutex is poisoned")
             .watched_paths
@@ -193,5 +193,59 @@ impl LanguageServer for Backend {
                 error!("Wrong file uri format: {}", params.text_document.uri);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::expect_used)]
+
+    use std::path::PathBuf;
+
+    use anyhow::Result;
+    use mockall::{Sequence, predicate};
+    use tower_lsp::{LanguageServer, lsp_types::InitializeParams};
+    use zed_extension_api::serde_json::json;
+
+    use crate::{backend::Backend, mocks::MockLspClient, watching::MockPathStore};
+
+    #[tokio::test]
+    async fn test_watch_success() -> Result<()> {
+        let path = "/path/to/watch";
+
+        let ctx = MockPathStore::new_context();
+        ctx.expect().returning(|_, _| {
+            let mut seq = Sequence::new();
+            let mut mock_path_store = MockPathStore::default();
+            mock_path_store
+                .expect_start_watcher()
+                .in_sequence(&mut seq)
+                .returning(|| ());
+            mock_path_store
+                .expect_watch()
+                .in_sequence(&mut seq)
+                .with(predicate::eq(PathBuf::from(path.to_string())))
+                .returning(|_| Ok(()));
+            Ok(mock_path_store)
+        });
+
+        let mut mock_lsp_client = MockLspClient::default();
+        mock_lsp_client
+            .expect_clone()
+            .returning(MockLspClient::default);
+
+        let backend = Backend::new(mock_lsp_client);
+        let initialize_params = InitializeParams {
+            initialization_options: Some(json!({
+                "github_token": "gho_my-shiny-token",
+                "gist_id": "deadbeefdeadbeefdeadbeefdeadbeef"
+            })),
+            ..Default::default()
+        };
+        backend.initialize(initialize_params).await?;
+
+        backend.watch_path(PathBuf::from(path))?;
+
+        Ok(())
     }
 }
