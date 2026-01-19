@@ -89,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_successful() -> Result<()> {
+    fn test_new_success() -> Result<()> {
         static EVENT_HANDLER_CALLED: AtomicBool = AtomicBool::new(false);
 
         let event_handler: EventHandler = Box::new(|_| {
@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn test_start_watcher_successful() -> Result<()> {
+    fn test_start_watcher_success() -> Result<()> {
         let ctx = MockPathWatcher::new_context();
         ctx.expect().return_once(|_| {
             let mut mock_path_watcher = MockPathWatcher::default();
@@ -130,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn test_watch_successful() -> Result<()> {
+    fn test_watch_success() -> Result<()> {
         let path = PathBuf::from("/hello/there");
         let path_clone = path.clone();
 
@@ -179,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unwatch_successful() -> Result<()> {
+    fn test_unwatch_success() -> Result<()> {
         let path = PathBuf::from("/hello/there");
         let path_clone_to_watch = path.clone();
         let path_clone_to_unwatch = path.clone();
