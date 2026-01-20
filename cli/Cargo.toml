@@ -1,6 +1,6 @@
 [package]
 name = "zed-settings-sync-cli"
-description = "A CLI tool for Zed editor settings_sync extension"
+description = "A CLI tool for Zed editor settings-sync extension"
 version = "0.0.1-alpha.5"
 edition = "2024"
 
