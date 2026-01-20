@@ -22,6 +22,7 @@ pub struct PathStore {
     watched_set: WatchedSet,
 }
 
+#[cfg_attr(test, mockall::automock)]
 impl PathStore {
     pub fn new(sync_client: Arc<dyn SyncClient>, lsp_client: Arc<LspClient>) -> Result<Self> {
         let event_handler = Box::new(move |event| {
@@ -112,7 +113,7 @@ mod tests {
     };
 
     #[test]
-    fn test_successful_creation() {
+    fn test_creation_success() {
         let ctx = MockWatchedSet::new_context();
         ctx.expect().returning(|_| Ok(MockWatchedSet::default()));
 
@@ -126,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unsuccessful_creation_when_watched_set_creation_failed() {
+    fn test_creation_failure_when_watched_set_creation_failed() {
         let ctx = MockWatchedSet::new_context();
         ctx.expect()
             .returning(|_| Err(anyhow!("Failed to create watched set")));
@@ -184,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn test_successful_watch_path() -> Result<()> {
+    fn test_watch_path_success() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -203,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unsuccessful_watch_path() -> Result<()> {
+    fn test_watch_path_failure() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -226,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn test_successful_unwatch_path() -> Result<()> {
+    fn test_unwatch_path_success() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -245,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unsuccessful_unwatch_path() -> Result<()> {
+    fn test_unwatch_path_failure() -> Result<()> {
         let dir = TempDir::new()?;
         dir.child("foobar").touch()?;
         let path = dir.path().to_path_buf();
@@ -303,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn test_modify_event_handling_without_modified_path() -> Result<()> {
+    fn test_modify_event_without_modified_path_notification() -> Result<()> {
         let ctx = MockWatchedSet::new_context();
         ctx.expect().returning(move |event_handler: EventHandler| {
             let event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Any)));
@@ -335,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    fn test_modify_event_handling_with_file_read_error() -> Result<()> {
+    fn test_modify_event_with_file_read_error_notification() -> Result<()> {
         let ctx = MockWatchedSet::new_context();
         ctx.expect().returning(move |event_handler: EventHandler| {
             let mut event = Event::new(EventKind::Modify(ModifyKind::Data(DataChange::Any)));

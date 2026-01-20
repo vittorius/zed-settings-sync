@@ -74,7 +74,6 @@ impl PathWatcher {
     }
 
     pub fn watch(&self, path: &Path) -> Result<()> {
-        // println!("Watcher is running: {}", self.watcher.lock().unwrap())
         self.watcher
             .lock()
             .map_err(|_| anyhow!("Path watcher mutex is poisoned"))?
@@ -196,7 +195,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_unwatch_successful() -> Result<()> {
+    async fn test_unwatch_success() -> Result<()> {
         init_event_handler!(event_handler);
 
         let mut path_watcher = PathWatcher::new(event_handler)?;

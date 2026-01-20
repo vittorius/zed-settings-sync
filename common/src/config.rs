@@ -139,7 +139,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_from_file_successfully_reads_correct_config_structure() -> Result<()> {
+    async fn test_from_file_success() -> Result<()> {
         zed_settings_file().write_str(
             r#"
             {
@@ -164,7 +164,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_from_file_fails_when_settings_file_is_missing() {
+    async fn test_from_file_failure_when_settings_file_is_missing() {
         let config = Config::from_settings_file();
 
         assert_eq!(
@@ -283,7 +283,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_from_user_input_successfully_reads_config() -> Result<()> {
+    async fn test_from_user_input_success() -> Result<()> {
         let input_lines = "\nabcdef1234567890\n"; // empty line followed by fake gist id
         let mut io = CursorInteractiveIO::new(input_lines);
 

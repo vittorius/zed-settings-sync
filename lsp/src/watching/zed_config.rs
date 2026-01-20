@@ -4,7 +4,10 @@ use std::{
 };
 
 use anyhow::Result;
+#[cfg(not(test))]
 use paths as zed_paths;
+#[cfg(test)]
+use test_support::zed_paths;
 use tower_lsp::lsp_types::Url;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -66,7 +69,69 @@ impl AsRef<Path> for ZedConfigFilePath {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum ZedConfigPathError {
     NotZedConfigFile,
     WrongFileUriFormat,
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use test_support::zed_paths;
+    use tower_lsp::lsp_types::Url;
+
+    use crate::watching::{ZedConfigFilePath, ZedConfigPathError};
+
+    #[test]
+    fn test_from_file_uri_success() {
+        let file_uri = Url::parse(&format!(
+            "file:///{}/tasks.json",
+            zed_paths::config_dir().display()
+        ))
+        .unwrap();
+        let config_path = ZedConfigFilePath::from_file_uri(&file_uri).unwrap();
+
+        assert_eq!(
+            config_path.path.to_string_lossy(),
+            zed_paths::config_dir().join("tasks.json").to_string_lossy()
+        );
+    }
+
+    #[test]
+    fn test_from_file_uri_failure_wrong_format() {
+        let file_uri = Url::parse("lol:///home/user/.config/zed/settings.json").unwrap();
+
+        assert_eq!(
+            ZedConfigFilePath::from_file_uri(&file_uri).unwrap_err(),
+            ZedConfigPathError::WrongFileUriFormat
+        );
+    }
+
+    #[test]
+    fn test_from_file_uri_failure_not_zed_config_file() {
+        let file_uri = Url::parse(&format!(
+            "file:///{}/settings.kek",
+            zed_paths::config_dir().display()
+        ))
+        .unwrap();
+
+        assert_eq!(
+            ZedConfigFilePath::from_file_uri(&file_uri),
+            Err(ZedConfigPathError::NotZedConfigFile)
+        );
+    }
+
+    #[test]
+    fn test_to_watched_path_buf_success() {
+        let file_uri =
+            Url::parse(&format!("file:///{}", zed_paths::settings_file().display())).unwrap();
+        let config_path = ZedConfigFilePath::from_file_uri(&file_uri).unwrap();
+
+        assert_eq!(
+            config_path.to_watched_path_buf().display().to_string(),
+            zed_paths::settings_file().display().to_string()
+        );
+    }
 }
