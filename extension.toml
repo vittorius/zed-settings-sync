@@ -6,10 +6,10 @@ authors = ["Viktor Zahorodnii <post.vittorius@gmail.com>"]
 description = "Never again be afraid of losing your precious Zed configuration"
 repository = "https://github.com/vittorius/zed-settings-sync"
 
-[language_servers.settings_sync]
+[language_servers.settings-sync]
 name = "Settings Sync LSP"
 languages = ["JSON", "JSONC"]
 
-[language_servers.settings_sync.language_ids]
+[language_servers.settings-sync.language_ids]
 "JSON" = "json"
 "JSONC" = "jsonc"
