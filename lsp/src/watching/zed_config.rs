@@ -95,7 +95,7 @@ mod tests {
 
         assert_eq!(
             config_path.path.to_string_lossy(),
-            format!("{}/tasks.json", zed_paths::config_dir().display())
+            zed_paths::config_dir().join("tasks.json").to_string_lossy()
         );
     }
 
