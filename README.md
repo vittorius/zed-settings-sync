@@ -27,7 +27,7 @@ Until then, you can use the [dev installation mode](#dev-extension-installation)
 ```jsonc
 {
   "lsp": {
-    "settings_sync": {
+    "settings-sync": {
       "initialization_options": {
         "github_token": "gho_my-shiny-token",
         "gist_id": "deadbeefdeadbeefdeadbeefdeadbeef"
@@ -83,7 +83,7 @@ Another approach could be swapping the keymap entries for <kbd>zed: open setting
 
 ## Troubleshooting
 
-- Open LSP logs (<kbd>dev: open language server logs</kbd>), find `settings_sync` LSP server instance running for the specific settings file, and inspect its log
+- Open LSP logs (<kbd>dev: open language server logs</kbd>), find `settings-sync` LSP server instance running for the specific settings file, and inspect its log
 - File an [issue](https://github.com/vittorius/zed-settings-sync/issues/new) on Github
 
 ## Development

@@ -4135,14 +4135,14 @@ dependencies = [
 
 [[package]]
 name = "zed-settings-sync"
-version = "0.0.1-alpha.5"
+version = "0.0.1-alpha.6"
 dependencies = [
  "zed_extension_api",
 ]
 
 [[package]]
 name = "zed-settings-sync-cli"
-version = "0.0.1-alpha.5"
+version = "0.0.1-alpha.6"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -4160,7 +4160,7 @@ dependencies = [
 
 [[package]]
 name = "zed-settings-sync-lsp"
-version = "0.0.1-alpha.5"
+version = "0.0.1-alpha.6"
 dependencies = [
  "anyhow",
  "assert_fs",
