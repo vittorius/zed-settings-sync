@@ -144,13 +144,13 @@ fn set_github_token_config_value(root: &CstRootNode, value: String) -> Result<()
         .ok_or(Error::InvalidConfig(
             r#"Missing "lsp" configuration object"#.to_string(),
         ))?
-        .get("settings_sync")
+        .get("settings-sync")
         .ok_or(Error::InvalidConfig(
-            r#"Missing "settings_sync" key"#.to_string(),
+            r#"Missing "settings-sync" key"#.to_string(),
         ))?
         .object_value()
         .ok_or(Error::InvalidConfig(
-            r#"Missing "settings_sync" configuration object"#.to_string(),
+            r#"Missing "settings-sync" configuration object"#.to_string(),
         ))?
         .get("initialization_options")
         .ok_or(Error::InvalidConfig(

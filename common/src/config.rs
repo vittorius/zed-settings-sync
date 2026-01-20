@@ -48,9 +48,9 @@ impl Config {
             .ok_or(anyhow!("Settings file is empty"))?;
         let config = from_value(
             zed_settings
-                .pointer("/lsp/settings_sync/initialization_options") // TODO: make this pointer key shared among crates of this package
+                .pointer("/lsp/settings-sync/initialization_options") // TODO: make this pointer key shared among crates of this package
                 .ok_or(anyhow!(
-                    "Missing lsp.settings_sync.initialization_options key in settings tree"
+                    "Missing lsp.settings-sync.initialization_options key in settings tree"
                 ))?
                 .clone(),
         )?;
@@ -144,7 +144,7 @@ mod tests {
             r#"
             {
                 "lsp": {
-                    "settings_sync": {
+                    "settings-sync": {
                         "initialization_options": {
                             "github_token": "your_github_token",
                             "gist_id": "your_gist_id"
@@ -195,7 +195,7 @@ mod tests {
 
         assert_eq!(
             config.unwrap_err().to_string(),
-            "Missing lsp.settings_sync.initialization_options key in settings tree"
+            "Missing lsp.settings-sync.initialization_options key in settings tree"
         );
 
         Ok(())
@@ -209,7 +209,7 @@ mod tests {
 
         assert_eq!(
             config.unwrap_err().to_string(),
-            "Missing lsp.settings_sync.initialization_options key in settings tree"
+            "Missing lsp.settings-sync.initialization_options key in settings tree"
         );
 
         Ok(())
@@ -222,7 +222,7 @@ mod tests {
             r#"
             {
               "lsp": {
-                "settings_sync": {}
+                "settings-sync": {}
               }
             }"#,
         )?;
@@ -231,7 +231,7 @@ mod tests {
 
         assert_eq!(
             config.unwrap_err().to_string(),
-            "Missing lsp.settings_sync.initialization_options key in settings tree"
+            "Missing lsp.settings-sync.initialization_options key in settings tree"
         );
 
         Ok(())
@@ -243,7 +243,7 @@ mod tests {
             r#"
             {
               "lsp": {
-                "settings_sync": {
+                "settings-sync": {
                   "initialization_options": {}
                 }
               }
@@ -263,7 +263,7 @@ mod tests {
             r#"
             {
               "lsp": {
-                "settings_sync": {
+                "settings-sync": {
                   "initialization_options": {
                     "gist_id": "1234567890abcdef"
                   }
