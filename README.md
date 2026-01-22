@@ -106,6 +106,8 @@ Requirements:
 
 1. Clone this repository
 2. <kbd>CTRL</kbd> + <kbd>SHIFT</kbd> + <kbd>P</kbd> and select <kbd>zed: install dev extension</kbd>
+   1. You may need to install additional build tool dependencies like XCode for macOS, Visual Studio build tools for Windows, etc. See
+      <kbd>zed: open log</kbd> for more details when seeing `Error: Failed to install dev extension: failed to compile Rust extension` popup while trying to install the dev extension.
 3. Choose the directory where you cloned this repository
 4. After installing the extension, reload the workspace (<kbd>workspace: reload</kbd>) to start the LSP server
 
