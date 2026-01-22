@@ -10,14 +10,15 @@
 - [x] Forbid the usage of unwrap and expect for Option, Result
 - [x] Use serde_json from zed_extension_api, not directly
 - [x] To support multiple sync providers, implement a Client trait and use it for all sync operations. Move it to the "common" crate.
-- [~] **Add unit tests for all important business logic types**
-- [ ] Prepare README for the initial public release (see Documentation)
+- [x] **Add unit tests for all important business logic types**
+- [x] Prepare README for the initial public release (see Documentation)
 
 ## LSP server
 
 - [x] Report a sync error in a visible way (crash the server? know how to report an LSP error inside Zed?)
 - [x] To support multiple sync providers, implement a SyncClient trait and use it for all sync operations. Move it to the "common" crate.
 - [ ] Manually save a settings file on its open (before adding to the watch list) to handle the case when the LSP server is restarted after the initialization_options are changes in settings.json file.
+- [ ] Print the LSP Rust package version in the logs upon initialization (and add it to the Bug issue template on Github)
 - [ ] Test all error-returning code paths and ensure that all error conditions are either properly logged and/or reported back to Zed in form or a JSON-RPC error response
 - [ ] Ensure that restarting or shutting down the LSP server doesn't prevent the last coming updates from getting synced; otherwise, mitigate that
 - [ ] Backup installed themes to the gist automatically
@@ -29,6 +30,7 @@
 
 ### CLI tool
 
+- [ ] Add a command to print the Rust package version (and add it to the Bug issue template on Github)
 - [ ] Add an option to create a new gist on the fly, copy settings to it and start using it from now on
 - [ ] Handle errors more beautifully, introduce the dedicated Error type if needed
 - [ ] Log output through tracing subscriber and/or add coloring of various levels of output messages
@@ -40,6 +42,7 @@
 - [x] Add matrix to compile for Windows on ARM64
 - [x] Speed up the build if possible (caching, Docker images, etc.)
 - [ ] ~~Extract "compile" as a separate local Github action~~ No need for that, because "compile" is used only for release.
+- [ ] Make non-.rs changes to avoid triggering the "check and test" workflow
 - [ ] Optimize binaries size <https://github.com/johnthagen/min-sized-rust>
 
 ## Documentation
