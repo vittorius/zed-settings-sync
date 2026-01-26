@@ -36,11 +36,21 @@ impl PathStore {
                             return;
                         };
 
-                        if let Err(err) = sync_client_clone.sync_file(data).await {
-                            error!("Could not sync file: {err}");
-                            lsp_client_clone
-                                .show_message(MessageType::ERROR, err.to_string())
-                                .await;
+                        match sync_client_clone.sync_file(data).await {
+                            Ok(()) => {
+                                lsp_client_clone
+                                    .show_message(
+                                        MessageType::INFO,
+                                        "Successfully synced".to_owned(),
+                                    )
+                                    .await;
+                            }
+                            Err(err) => {
+                                error!("Could not sync file: {err}");
+                                lsp_client_clone
+                                    .show_message(MessageType::ERROR, err.to_string())
+                                    .await;
+                            }
                         }
                     }
                     Err(err) => {
@@ -397,7 +407,13 @@ mod tests {
             .return_once(|_| Ok(()));
 
         let mut mock_lsp_client = MockLspClient::default();
-        mock_lsp_client.expect_show_message().never();
+        mock_lsp_client
+            .expect_show_message()
+            .with(
+                predicate::eq(MessageType::INFO),
+                predicate::eq("Successfully synced".to_owned()),
+            )
+            .return_once(|_msg_type, _msg| Box::pin(async {}));
 
         PathStore::new(Arc::new(mock_sync_client), Arc::new(mock_lsp_client))?;
 
